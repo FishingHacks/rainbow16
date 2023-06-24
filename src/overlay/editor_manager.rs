@@ -11,7 +11,7 @@ use super::canvas_functions::*;
 
 use crate::sprites::LOGO_BG_RED_FG_PURP;
 use crate::{
-    c_singleton, get_s_val,
+    get_s_val,
     image::{parse_image, Image},
     pub_c_singleton, set_s_val, Singleton,
 };
@@ -54,7 +54,7 @@ pub_c_singleton!(IMAGE_SPREDIT_SEL, Image, || parse_image(
 .unwrap());
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
-enum Editor {
+pub enum Editor {
     #[default]
     Code,
     Sfx,
@@ -72,7 +72,7 @@ impl Editor {
     }
 }
 
-c_singleton!(CURRENT_EDITOR, Editor, || Editor::default());
+pub_c_singleton!(CURRENT_EDITOR, Editor, || Editor::default());
 
 fn render_titlebar() {
     let cur_sel = get_s_val!(CURRENT_EDITOR);

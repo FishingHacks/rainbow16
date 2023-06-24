@@ -10,7 +10,7 @@ use super::{
 };
 use crate::{
     c_singleton,
-    gamestate::{get_code, get_path, run_game, set_code as __set_code},
+    gamestate::{get_code, get_path, run_game, set_code as __set_code, gamedata_to_string},
     get_s_val,
     luautils::print_err,
     set_s_val,
@@ -467,7 +467,7 @@ pub fn handle_key(key: Keycode) {
 
 pub fn save() {
     if let Some(path) = get_path() {
-        let code = get_code().join("\n");
+        let code = gamedata_to_string();
         if let Err(e) = write(path, code) {
             set_message(format!("error: {e}").to_lowercase().as_str());
         } else {

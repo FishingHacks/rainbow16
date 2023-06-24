@@ -185,8 +185,16 @@ pub fn reset_scroll() {
 }
 
 pub fn handle_scroll(x: i32) {
-    let newx = x as i64 + get_s_val!(keymemory).get_at_addr_u32_d(0x2f) as i64;
-    get_s_val!(keymemory).set_at_addr_u32(0x2f, newx as u32);
+    get_s_val!(keymemory).set_at_addr(
+        0x2f,
+        if x < 0 {
+            1
+        } else if x > 0 {
+            2
+        } else {
+            0
+        },
+    );
 }
 
 pub fn handle_mousemove(x: u32, y: u32) {
@@ -203,4 +211,16 @@ pub fn mouse_button_down(button: MouseButton) -> bool {
         MouseButton::Middle => val & 4 > 0,
         _ => false,
     }
+}
+
+pub fn is_scrolling() -> bool {
+    get_s_val!(keymemory).get_at_addr_d(0x2f) > 0
+}
+
+pub fn is_scrolling_down() -> bool {
+    get_s_val!(keymemory).get_at_addr_d(0x2f) == 1
+}
+
+pub fn is_scrolling_up() -> bool {
+    get_s_val!(keymemory).get_at_addr_d(0x2f) == 2
 }

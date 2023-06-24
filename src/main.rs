@@ -46,7 +46,7 @@ use sdl2::{pixels::Color, render::WindowCanvas};
 use singleton::Singleton;
 
 use crate::{
-    audio::tick_audio, keyboard::handle_textinput, memory::charpress
+    audio::tick_audio, keyboard::handle_textinput, memory::{charpress, init_memory_sections}
 };
 
 #[macro_export]
@@ -121,6 +121,8 @@ fn main() {
         eprintln!("Failed to setup the folders:\n{e}");
         std::process::exit(1);
     }
+    init_memory_sections();
+
     set_s_val!(
         SDL_CONTEXT,
         Some(sdl2::init().expect("Could not initialize SDL2"))
@@ -173,6 +175,10 @@ fn main() {
     add_line_to_stdout(format!("{} {}", NAME, VERSION));
 
     tick_audio();
+
+    let mouse_util = sdl_context.mouse();
+
+    mouse_util.show_cursor(false);
 
     'running: loop {
         handle_textinput('\0');
@@ -232,9 +238,14 @@ fn main() {
                         if let Some((x, y)) =
                             real_coordinates_to_pixels(x as u32, y as u32, windowcanvas.window())
                         {
+                            mouse_util.show_cursor(false);
                             ov_handle_mousemove(x, y);
                             handle_mousemove(x, y);
+                        } else {
+                            mouse_util.show_cursor(true);
                         }
+                    } else {
+                        mouse_util.show_cursor(true);
                     }
                 }
                 _ => {}
@@ -264,6 +275,10 @@ fn main() {
         if next_game_step <= now {
             keyboard_update();
             next_game_step += TIME_STEP_MS;
+
+            if next_game_step <= now {
+                next_game_step = now;
+            }
 
             updateoverlay();
             if !is_overlay_active() {

@@ -143,8 +143,6 @@ pub fn render() {
     for i in 0..waves.len() {
         waves[i].put_on_canvas(set_pixel, 115 + (i as i32 * 12), 18);
     }
-
-    rectfill(0, 173, 200, 7, 2);
 }
 
 pub fn mousedown(button: MouseButton, x: u32, y: u32) {
@@ -226,6 +224,11 @@ pub fn mousedown(button: MouseButton, x: u32, y: u32) {
                     6 => WaveType::TriangleWave,
                     _ => WaveType::SquareWave,
                 };
+            }
+            if is_shift_pressed() {
+                for i in a.items.iter_mut() {
+                    i.wave_type = unsafe { CURRENT_WAVE };
+                }
             }
         }
     }

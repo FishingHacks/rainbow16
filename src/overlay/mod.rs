@@ -16,4 +16,5 @@ mod editor_manager;
 mod spr;
 mod sized_vec;
 mod sfx;
+mod mouse_cursor;
 pub use syntax_parser::vec_to_regex;

@@ -50,6 +50,8 @@ impl Language for R16Lang {
         )?;
         x.token(Scope::StringQuoted, "\\[\\[([^]]*)\\]\\]")?;
         x.token(Scope::ConstantNumber, "\\b([0-9][0-9.]*)\\b")?;
+        x.token(Scope::ConstantNumber, "\\b(0x[0-9a-f]+)\\b")?;
+        x.token(Scope::ConstantNumber, "\\b(0b[0-1]+)\\b")?;
         x.token(
             Scope::KeywordControl,
             vec_to_regex(vec![

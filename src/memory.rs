@@ -1,10 +1,8 @@
 #![allow(dead_code)]
 
-use std::{
-    fmt::Display,
-};
+use std::fmt::Display;
 
-use crate::{singleton::Singleton, HEIGHT, WIDTH};
+use crate::{get_s_val, singleton::Singleton, HEIGHT, WIDTH};
 
 static mut __MEM: Singleton<Vec<u8>> = Singleton::new(|| <Vec<u8>>::new());
 
@@ -95,6 +93,7 @@ impl Display for MemorySection {
 // 0x0-0xf: Color Translations
 // 0x10: Palette
 // 0x11-0x12: Color Translations (transparency)
+// 0x13-end: Display
 #[allow(non_upper_case_globals)]
 pub static mut displaymemory: Singleton<MemorySection> = Singleton::new(|| {
     let section = MemorySection::new(WIDTH * HEIGHT + 19, "Display Memory");
@@ -132,10 +131,11 @@ Layout:
 0x2f-0x32: mouse wheel dy (subtract i32::max)
 0x33-0x36: mouse pos x
 0x37-0x3a: mouse pos y
+0x3b: Set to 1 to activate the mouse cursor
  */
 #[allow(non_upper_case_globals)]
 pub static mut keymemory: Singleton<MemorySection> =
-    Singleton::new(|| MemorySection::new(59, "Key Memory"));
+    Singleton::new(|| MemorySection::new(60, "Key Memory"));
 
 // a 4-byte char
 #[allow(non_upper_case_globals)]
@@ -158,9 +158,24 @@ pub fn peek(address: usize) -> u8 {
     }
 }
 
+pub fn init_memory_sections() {
+    let sections = vec![
+        get_s_val!(displaymemory),
+        get_s_val!(keymemory),
+        get_s_val!(charpress),
+        get_s_val!(sfx),
+    ];
+
+    for s in sections {
+        println!("{s}");
+    }
+}
+
 pub fn poke(address: usize, value: u8) {
     let mem = getmem();
     if address < mem.len() {
         mem[address] = value;
+    } else {
+        println!("too big!");
     }
 }

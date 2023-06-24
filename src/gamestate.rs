@@ -6,7 +6,7 @@ use crate::{
     luastd::setup_stdlib,
     luautils::{init_ctx, run_function_if_function},
     overlay::overlay::set_overlay,
-    set_s_val, Singleton, TIME,
+    set_s_val, Singleton, TIME, memory::{sfx, keymemory},
 };
 use rlua::{Error, Lua, StdLib, Value};
 
@@ -49,6 +49,7 @@ impl GameState {
     }
 
     fn run_game(&mut self) -> Option<Error> {
+        stop_game();
         set_s_val!(TIME, 0);
         let (res, lua) = init_ctx(StdLib::BASE, |ctx| {
             setup_stdlib(ctx)?;
@@ -133,6 +134,11 @@ pub fn stop_game() {
     set_s_val!(TIME, 0);
     get_s_val!(GAME_STATE).lua = None;
     set_overlay(crate::overlay::OverlayType::None);
+    let mem = get_s_val!(sfx);
+    for i in 0..=102 {
+        mem.set_at_addr(i, 0);
+    }
+    get_s_val!(keymemory).set_at_addr(0x3b, 0);
 }
 
 pub fn run_fn(fnname: &str) -> Option<Error> {

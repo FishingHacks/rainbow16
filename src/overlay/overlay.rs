@@ -1,24 +1,22 @@
 use sdl2::keyboard::Keycode;
 use sdl2::mouse::MouseButton;
 
+use crate::audio::{is_muted, set_muted};
 use crate::canvas_functions::PALETTE1;
 use crate::gamestate::game_is_running;
 use crate::get_s_val;
-use crate::audio::{set_muted, is_muted};
+use crate::memory::keymemory;
 use crate::utils::is_ctrl_pressed;
 
 use super::canvas_functions::{clear, cursor};
 use super::editor_manager::{
-    handle_key as handle_key_editor,
-    update as update_editor,
-    handle_mousedown as handle_mousedown_editor,
-    render as render_editor,
-    handle_scroll as handle_scroll_editor,
-    init as init_editor,
-    handle_mousemove as handle_mousemove_editor,
+    handle_key as handle_key_editor, handle_mousedown as handle_mousedown_editor,
+    handle_mousemove as handle_mousemove_editor, handle_scroll as handle_scroll_editor,
+    init as init_editor, render as render_editor, update as update_editor,
 };
 use super::globals::{OverlayType, DISPLAYMEM, OVERLAY};
 use super::message::{render as rendermessage, set_message};
+use super::mouse_cursor::{mousemove as mousemove_cursor, render as render_cursor};
 use super::options::{cycle_palette, init as initopt, render as renderopt, update as updateopt};
 use super::pause_menu::{init as initpm, render as renderpm, update as updatepm};
 use super::terminal::{
@@ -56,6 +54,9 @@ pub fn renderoverlay() {
             OverlayType::None => renderterm(),
             OverlayType::CodeEditor => render_editor(),
         }
+    }
+    if is_overlay_active() || get_s_val!(keymemory).get_at_addr_d(0x3b) > 0 {
+        render_cursor();
     }
     rendermessage();
 }
@@ -130,7 +131,7 @@ pub fn ov_handle_keydown(key: Keycode) {
                 false
             }
         }
-        
+
         _ => false,
     } {
         if is_overlay_active() {
@@ -176,6 +177,9 @@ pub fn ov_handle_mousedown(button: MouseButton, x: u32, y: u32) {
 }
 
 pub fn ov_handle_mousemove(x: u32, y: u32) {
+    if is_overlay_active() || get_s_val!(keymemory).get_at_addr_d(0x3b) > 0 {
+        mousemove_cursor(x, y);
+    }
     if !is_overlay_active() {
         return;
     }

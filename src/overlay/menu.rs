@@ -1,5 +1,7 @@
 #![allow(non_upper_case_globals)]
-use crate::keyboard::{button_is_pressed, u8_to_button, Button};
+use sdl2::mouse::MouseButton;
+
+use crate::keyboard::{button_is_pressed, u8_to_button, Button, is_scrolling_up, is_scrolling_down, mouse_button_down};
 
 use super::canvas_functions::*;
 
@@ -25,7 +27,7 @@ pub fn update(items: &Vec<String>) -> Option<u32> {
         }
     }
 
-    if button_is_pressed(Button::Up) {
+    if button_is_pressed(Button::Up) || is_scrolling_up() {
         unsafe {
             if selected > 0 {
                 selected -= 1;
@@ -34,7 +36,7 @@ pub fn update(items: &Vec<String>) -> Option<u32> {
             }
         }
     }
-    if button_is_pressed(Button::Down) {
+    if button_is_pressed(Button::Down) || is_scrolling_down() {
         unsafe {
             if selected < items.len() as u32 - 1 {
                 selected += 1;
@@ -64,7 +66,7 @@ pub fn render(items: &Vec<String>) {
     let selected_item = unsafe { selected };
     let dsty = selected_item as i32 * 8 - 1;
     if dsty != unsafe { y.floor() as i32 } {
-        unsafe { y += 0.75f32 * (dsty as f32 - y).signum() }
+        unsafe { y += 1.0 * (dsty as f32 - y).signum() }
     } else {
         unsafe {
             y = dsty as f32;

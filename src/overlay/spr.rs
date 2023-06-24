@@ -224,7 +224,7 @@ pub fn mousedown(button: MouseButton, mut x: u32, mut y: u32) {
         }
         unsafe { CURSPR = _s };
     }
-    if button == MouseButton::Left && y >= 110 && y <= 125 && x >= 120 && x <= 138 {
+    if button == MouseButton::Left && y >= 110 && y <= 125 && x >= 130 && x <= 138 {
         if y > 118 {
             unsafe {
                 CURSPR = MAXSPR / 2;

@@ -266,13 +266,13 @@ pub fn circle(cx: i32, cy: i32, r: i32, color: u8) {
 
 pub fn in_bounds(x: i32, y: i32) -> bool {
     !(x < 0
-        || x < get_s_val_c!(MIN_X)
+        // || x < get_s_val_c!(MIN_X)
         || x >= WIDTH as i32
-        || x >= get_s_val_c!(MAX_X)
+        // || x >= get_s_val_c!(MAX_X)
         || y < 0
-        || y < get_s_val_c!(MIN_Y)
-        || y >= HEIGHT as i32
-        || y >= get_s_val_c!(MAX_Y))
+        // || y < get_s_val_c!(MIN_Y)
+        || y >= HEIGHT as i32)
+        // || y >= get_s_val_c!(MAX_Y))
 }
 
 pub fn line(mut x1: i32, mut y1: i32, mut x2: i32, mut y2: i32, color: u8) {
