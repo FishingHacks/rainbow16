@@ -3,12 +3,12 @@ use std::fs::{create_dir_all, read_dir, read_to_string, remove_dir_all, remove_f
 
 use crate::{
     c_singleton,
-    gamestate::{get_code, get_path, load_game, run_game},
+    gamestate::{gamedata_to_string, get_code, get_path, load_game, run_game, set_file_name, load_code},
     get_s_val,
     info::VERSION,
     luautils::print_err,
     utils::{is_alt_pressed, is_ctrl_pressed},
-    Singleton, CARTSPATH,
+    Singleton, CARTSPATH, audio::Audio,
 };
 
 use super::{canvas_functions::*, key_utils::keycode_to_character, overlay::set_overlay};
@@ -133,7 +133,7 @@ pub fn run_command(mut cmd: &str) {
         }
         "new" => {
             if args.len() < 1 {
-                load_game(NEW_STR.to_string(), None);
+                load_code(NEW_STR.to_string(), None);
                 set_overlay(super::OverlayType::CodeEditor);
             } else {
                 let name = args[0].trim();
@@ -145,7 +145,7 @@ pub fn run_command(mut cmd: &str) {
                         match write(p, NEW_STR) {
                             Ok(..) => {
                                 // TODO: Load
-                                load_game(NEW_STR.to_string(), Some(p.to_string()));
+                                load_code(NEW_STR.to_string(), Some(p.to_string()));
                                 set_overlay(super::OverlayType::CodeEditor);
                             }
                             Err(e) => {
@@ -189,7 +189,11 @@ pub fn run_command(mut cmd: &str) {
                 let p = p.to_string();
                 match read_to_string(p.clone()) {
                     Err(e) => add_line_to_stdout(format!("{e}")),
-                    Ok(str) => load_game(str, Some(p)),
+                    Ok(str) => {
+                        if !load_game(str, Some(p)) {
+                            add_line_to_stdout(format!("Failed to load {}", name));
+                        }
+                    },
                 };
             }
         }
@@ -212,8 +216,7 @@ pub fn run_command(mut cmd: &str) {
 pub fn save(args: Vec<&str>) {
     if args.len() < 1 {
         if let Some(path) = get_path() {
-            let code = get_code().join("\n");
-            if let Err(e) = write(path, code) {
+            if let Err(e) = write(path, gamedata_to_string()) {
                 add_line_to_stdout(format!("error: {e}").to_lowercase());
             } else {
                 set_overlay(super::OverlayType::CodeEditor);
@@ -223,12 +226,8 @@ pub fn save(args: Vec<&str>) {
         }
     } else {
         let path = get_s_val!(CARTSPATH).join(args.join(" ") + ".r16");
-        let code = get_code().join("\n");
-        load_game(
-            code.clone(),
-            path.to_str().and_then(|f| Some(f.to_string())),
-        );
-        if let Err(e) = write(path, code) {
+        set_file_name(path.to_str().and_then(|f| Some(f.to_string())));
+        if let Err(e) = write(path, gamedata_to_string()) {
             add_line_to_stdout(format!("error: {e}").to_lowercase());
         } else {
             set_overlay(super::OverlayType::CodeEditor);
@@ -249,7 +248,13 @@ pub fn render() {
     print(unsafe { &STDIN.to_lowercase() }, Some(0), Some(y), None);
     if let Ok(dur) = SystemTime::now().duration_since(UNIX_EPOCH) {
         if dur.as_millis() % 1000 < 500 {
-            rectfill(unsafe { STDIN.len() as i32 } * 4, y, 3, 5, 2);
+            rectfill(
+                unsafe { STDIN.chars().collect::<Vec<char>>().len() as i32 } * 4,
+                y,
+                3,
+                5,
+                2,
+            );
         }
     }
 }
@@ -286,7 +291,7 @@ pub fn handle_key(key: Keycode) {
             return;
         }
     }
-    if let Some(char) = keycode_to_character(key) {
+    if let Some(char) = keycode_to_character(Some(key)) {
         return add_char_to_stdin(char);
     }
     unsafe {

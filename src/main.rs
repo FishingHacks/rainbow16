@@ -1,13 +1,14 @@
 pub mod audio;
 pub mod canvas_functions;
 pub mod charmap;
+pub mod file_parser;
+pub mod frequencies;
 pub mod gamestate;
 pub mod image;
 pub mod info;
 pub mod keyboard;
 pub mod luastd;
 pub mod luautils;
-pub mod sound;
 pub mod sprites;
 pub mod utils;
 pub mod waves;
@@ -24,6 +25,7 @@ use std::{
 
 use canvas_functions::*;
 use dirs::home_dir;
+use gamestate::{draw_game, update_game};
 use info::{NAME, VERSION};
 use keyboard::{
     handle_acc_keys_down, handle_acc_keys_up, handle_keydown, handle_keyup, handle_mousedown,
@@ -38,14 +40,13 @@ use overlay::{
 };
 use rand::rngs::ThreadRng;
 use rand::thread_rng;
-use sdl2::rect::Rect;
 use sdl2::{event::Event, video::Window};
+use sdl2::{keyboard::Keycode, rect::Rect};
 use sdl2::{pixels::Color, render::WindowCanvas};
 use singleton::Singleton;
 
 use crate::{
-    gamestate::{draw_game, update_game},
-    sound::update_sounds,
+    audio::tick_audio, keyboard::handle_textinput, memory::charpress, overlay::message::set_message,
 };
 
 #[macro_export]
@@ -171,7 +172,12 @@ fn main() {
 
     add_line_to_stdout(format!("{} {}", NAME, VERSION));
 
+    tick_audio();
+
     'running: loop {
+        handle_textinput('\0');
+        let mut keyup_events: Vec<Keycode> = vec![];
+        let mut keydown_events: Vec<Keycode> = vec![];
         for event in event_pump.poll_iter() {
             match event {
                 Event::Quit { .. } => {
@@ -179,22 +185,26 @@ fn main() {
                 }
                 Event::KeyDown {
                     keycode: Some(k),
-                    repeat,
                     window_id,
                     ..
                 } => {
                     if window_id == w_id {
-                        handle_acc_keys_down(k);
-                        ov_handle_keydown(k);
-                        handle_keydown(k, repeat);
+                        keydown_events.push(k);
                     }
                 }
                 Event::KeyUp {
                     keycode: Some(k), ..
                 } => {
-                    handle_acc_keys_up(k);
-                    ov_handle_keyup(k);
-                    handle_keyup(k);
+                    keyup_events.push(k);
+                }
+                Event::TextInput { text, .. } => {
+                    let _char = if text.len() > 0 {
+                        let char = text.chars().nth(0);
+                        char.unwrap_or('\0')
+                    } else {
+                        '\0'
+                    };
+                    handle_textinput(_char);
                 }
                 Event::MouseButtonDown {
                     mouse_btn, x, y, ..
@@ -231,43 +241,61 @@ fn main() {
             }
         }
 
-        update_sounds();
+        if get_s_val!(charpress).get_at_addr_u32_d(0) > 0 && keydown_events.len() < 1 {
+            keydown_events.push(Keycode::Www);
+        }
+
+        for key in keydown_events {
+            handle_acc_keys_down(key);
+            ov_handle_keydown(key);
+            handle_keydown(key);
+        }
+
+        for key in keyup_events {
+            handle_acc_keys_up(key);
+            ov_handle_keyup(key);
+            handle_keyup(key);
+        }
+
+        tick_audio();
 
         let now = timer.ticks();
 
         if next_game_step <= now {
             keyboard_update();
             next_game_step += TIME_STEP_MS;
+
             updateoverlay();
             if !is_overlay_active() {
                 set_s_val!(TIME, *get_s_val!(TIME) + 1u64);
                 update_game();
             }
             reset_scroll();
+
+            renderoverlay();
+            if !is_overlay_active() {
+                cursor(None, None);
+                draw_game();
+            }
+
+            let mut vec = <Vec<u8>>::with_capacity((WIDTH * HEIGHT * 4) as usize);
+            if !is_overlay_active() {
+                sdl_apply_canvas(&mut vec);
+            }
+            ov_write_to_sdl(&mut vec);
+
+            texture
+                .update(None, &vec, (WIDTH * 4) as usize)
+                .err()
+                .and_then(|e| {
+                    eprintln!("Error: Could not update the texture: {}", e);
+                    Some(e)
+                });
         }
 
         windowcanvas.set_draw_color(BLACK);
         windowcanvas.clear();
 
-        renderoverlay();
-        if !is_overlay_active() {
-            cursor(None, None);
-            draw_game();
-        }
-
-        let mut vec = <Vec<u8>>::with_capacity((WIDTH * HEIGHT * 4) as usize);
-        if !is_overlay_active() {
-            sdl_apply_canvas(&mut vec);
-        }
-        ov_write_to_sdl(&mut vec);
-
-        texture
-            .update(None, &vec, (WIDTH * 4) as usize)
-            .err()
-            .and_then(|e| {
-                eprintln!("Error: Could not update the texture: {}", e);
-                Some(e)
-            });
         let sz = windowcanvas.window().size();
         let mult = min(sz.0 / WIDTH, sz.1 / HEIGHT);
         windowcanvas

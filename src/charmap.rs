@@ -84,8 +84,8 @@ c_singleton!(CHARMAP, HashMap<char, u32>, || {
 
 static UNKNOWN_CHAR: &u32 = &31599;
 
-pub fn get_char(char: u8) -> u32 {
-    *get_s_val!(CHARMAP).get(&(char as char)).unwrap_or(UNKNOWN_CHAR)
+pub fn get_char(char: char) -> u32 {
+    *get_s_val!(CHARMAP).get(&char).unwrap_or(UNKNOWN_CHAR)
 }
 
 pub fn put_char_on_canvas(char: &u32, x: i32, y: i32, color: u8) {

@@ -4,7 +4,7 @@ use sdl2::mouse::MouseButton;
 use crate::canvas_functions::PALETTE1;
 use crate::gamestate::game_is_running;
 use crate::get_s_val;
-use crate::sound::{toggle_muted, is_muted};
+use crate::audio::{set_muted, is_muted};
 use crate::utils::is_ctrl_pressed;
 
 use super::canvas_functions::{clear, cursor};
@@ -122,7 +122,7 @@ pub fn ov_handle_keydown(key: Keycode) {
         }
         Keycode::M => {
             if game_is_running() && is_ctrl_pressed() {
-                toggle_muted(None);
+                set_muted(None);
                 if is_muted() {
                     set_message("muted (ctrl+m)");
                 } else {
@@ -133,6 +133,7 @@ pub fn ov_handle_keydown(key: Keycode) {
                 false
             }
         }
+        
         _ => false,
     } {
         if is_overlay_active() {

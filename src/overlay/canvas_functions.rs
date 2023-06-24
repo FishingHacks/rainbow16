@@ -186,7 +186,7 @@ pub fn put_char_on_canvas(char: &u32, x: i32, y: i32, color: u8) {
 }
 
 pub fn print(text: &String, x: Option<i32>, y: Option<i32>, color: Option<u8>) {
-    let bytes = text.as_bytes();
+    let bytes: Vec<char> = text.chars().collect();
 
     if x.is_some() || y.is_some() {
         cursor(x, y);
@@ -194,12 +194,10 @@ pub fn print(text: &String, x: Option<i32>, y: Option<i32>, color: Option<u8>) {
 
     let col = color.unwrap_or(12);
     let mut i: usize = 0;
-    while i < text.len() {
+    while i < bytes.len() {
         match bytes[i] {
-            // \n
-            10 => cursor(Some(x.unwrap_or(0)), Some(unsafe { cursory } + 6)),
-            // ' '
-            32 => unsafe { cursorx += 4 },
+            '\n' => cursor(Some(x.unwrap_or(0)), Some(unsafe { cursory } + 6)),
+            ' ' => unsafe { cursorx += 4 },
             _ => unsafe {
                 let char = get_char(bytes[i]);
                 put_char_on_canvas(&char, cursorx, cursory, col);

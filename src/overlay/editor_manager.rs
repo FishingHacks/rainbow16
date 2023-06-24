@@ -5,6 +5,7 @@ use super::editor::{
 use super::overlay::hide_overlay;
 use super::spr::{render as render_spr, keydown as keydown_spr, mousedown as mousedown_spr, mousemove as handle_mousemove_spr};
 use sdl2::{keyboard::Keycode, mouse::MouseButton};
+use super::sfx::{render as render_sfx, mousedown as mousedown_sfx, mousemove as mousemove_sfx, keydown as keydown_sfx};
 
 use super::canvas_functions::*;
 
@@ -108,6 +109,7 @@ pub fn handle_mousedown(button: MouseButton, x: u32, y: u32) {
         match get_s_val!(CURRENT_EDITOR) {
             Editor::Code => handle_mousedown_code(button, x, y),
             Editor::Sprites => mousedown_spr(button, x, y),
+            Editor::Sfx => mousedown_sfx(button, x, y),
             _ => {}
         }
     }
@@ -128,6 +130,7 @@ pub fn handle_key(key: Keycode) {
     match get_s_val!(CURRENT_EDITOR) {
         Editor::Code => handle_key_code(key),
         Editor::Sprites => keydown_spr(key),
+        Editor::Sfx => keydown_sfx(key),
         _ => {}
     }
 }
@@ -136,6 +139,7 @@ pub fn render() {
     match get_s_val!(CURRENT_EDITOR) {
         Editor::Code => render_code(),
         Editor::Sprites => render_spr(),
+        Editor::Sfx => render_sfx(),
         _ => {}
     }
     render_titlebar();
@@ -155,6 +159,7 @@ pub fn init() {
 pub fn handle_mousemove(x: u32, y: u32) {
     match get_s_val!(CURRENT_EDITOR) {
         Editor::Sprites => handle_mousemove_spr(x, y),
+        Editor::Sfx => mousemove_sfx(x, y),
         _ => {}
     };
 }

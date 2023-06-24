@@ -64,7 +64,7 @@ impl Language for R16Lang {
         x.token(
             Scope::KeywordOperator,
             vec![
-                "==", "=", "~=", "\\|", ">>", "<<", "&", "\\+", "-", "\\*", "/",
+                "==", "=", "~=", "\\|", ">>", "<<", "&", "\\+", "-", "\\*", "/", "<=", ">=", "<", ">"
             ]
             .join("|"),
         )?;
@@ -78,7 +78,7 @@ impl Language for R16Lang {
                 "sleep", "add", "stop", "Exit", "peek", "poke", "btn", "btnp", "setp", "cls",
                 "rectfill", "cursor", "print", "rect", "ellipse", "circle", "line", "camera",
                 "pal", "palt", "setpal", "sspr", "spr", "rnd", "time", "cos", "sin", "sqrt",
-                "flr",
+                "flr", "sfx"
             ]),
         )?;
 
@@ -129,8 +129,6 @@ fn is_in_selection(x: i32, y: i32, start: &SelectionCoordinate, end: &SelectionC
     let y = y as u32;
     let x = x as u32;
 
-    // println!("{:?} {:?}", _start, _end);
-
     if y < _start.line || y > _end.line {
         return false;
     } else if y == _start.line && x < _start.col {
@@ -156,7 +154,7 @@ pub fn print_highlighted_code(
         selection_start.col != selection_end.col || selection_start.line != selection_end.line;
 
     for t in code {
-        let bytes = t.str.as_bytes();
+        let bytes: Vec<char> = t.str.chars().collect();
         for i in 0..bytes.len() {
             if has_selection
                 && is_in_selection((x - ox) / 4, (y - oy) / 6, selection_start, selection_end)
@@ -165,12 +163,12 @@ pub fn print_highlighted_code(
             }
             match bytes[i] {
                 // \n
-                10 => {
+                '\n' => {
                     y += 6;
                     x = ox;
                 }
                 // ' '
-                32 => x += 4,
+                ' ' => x += 4,
                 _ => {
                     let char = get_char(bytes[i]);
                     put_char_on_canvas(&char, x, y, t.color as u8);

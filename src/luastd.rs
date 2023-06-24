@@ -1,12 +1,13 @@
 use std::thread;
-use std::time::Duration;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use rand::Rng;
 use rlua::{Context, Error, FromLua, Table, Value};
 
+use crate::gamestate::get_audio;
 use crate::keyboard::{button_is_down, button_is_pressed, u8_to_button};
 use crate::luautils::value_to_string;
-use crate::memory::{peek, poke};
+use crate::memory::{peek, poke, sfx};
 use crate::{canvas_functions::*, luautils::add_fn};
 use crate::{get_s_val, RNG, TIME};
 
@@ -119,16 +120,31 @@ pub fn setup_stdlib<'a>(ctx: Context<'a>) -> Result<(), Error> {
             Ok(())
         },
     )?;
-    add_fn(
-        ctx,
-        "spr",
-        |_, (idx, x, y): (u32, i32, i32)| {
-            spr(idx, x, y);
+    add_fn(ctx, "spr", |_, (idx, x, y): (u32, i32, i32)| {
+        spr(idx, x, y);
 
-            Ok(())
-        },
-    )?;
+        Ok(())
+    })?;
+    add_fn(ctx, "sfx", |_, idx: i32| {
+        let mem = get_s_val!(sfx);
+        if idx < 32 && idx >= 0 {
+            get_audio(idx as usize).write_to_memory(mem, 0);
+            mem.set_at_addr(102, 1);
+            mem.set_at_addr_u32(
+                98,
+                SystemTime::now()
+                    .duration_since(UNIX_EPOCH)
+                    .unwrap()
+                    .as_millis() as u32,
+            );
+        } else if idx < 0 {
+            for i in 0..=102 {
+                mem.set_at_addr(i, 0);
+            }
+        }
 
+        Ok(())
+    })?;
 
     add_fn(ctx, "rnd", |_, value: Option<RndArgument>| {
         if let Some(v) = value {

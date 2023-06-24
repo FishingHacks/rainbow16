@@ -7,7 +7,7 @@ use crate::{
     c_singleton, get_s_val,
     keyboard::button_is_pressed,
     memory::displaymemory,
-    sound::{get_volume, is_muted, set_volume, toggle_muted},
+    audio::{get_volume, is_muted, set_volume, set_muted},
     utils::cycle,
     Singleton,
 };
@@ -69,7 +69,7 @@ pub fn update() {
                     }
                 }
                 if button_is_pressed(crate::keyboard::Button::A) {
-                    toggle_muted(None);
+                    set_muted(None);
                 }
             }
             3 => set_overlay(super::OverlayType::PauseMenu),

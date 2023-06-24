@@ -390,9 +390,8 @@ pub fn print<T: Into<String>>(text: T, x: Option<i32>, y: Option<i32>, color: Op
         // we have to check because cursor() will reset the cursor to 0 0, which we don't want in that case
         cursor(x, y);
     }
-    let _t: String = text.into();
-    println!("{_t}");
-    let bytes = _t.as_bytes();
+    let text: String = text.into();
+    let bytes: Vec<char> = text.chars().collect();
 
     let mut i: usize = 0;
 
@@ -401,11 +400,10 @@ pub fn print<T: Into<String>>(text: T, x: Option<i32>, y: Option<i32>, color: Op
         _ => 12,
     });
 
-    while i < _t.len() {
+    while i < bytes.len() {
         let char = get_char(bytes[i]);
         match bytes[i] {
-            // \n
-            10 => cursor(Some(x.unwrap_or(0)), Some(unsafe { CURSORY } + 6)),
+            '\n' => cursor(Some(x.unwrap_or(0)), Some(unsafe { CURSORY } + 6)),
             _ => unsafe {
                 put_char_on_canvas(&char, CURSORX, CURSORY, col);
 

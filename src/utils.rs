@@ -69,3 +69,26 @@ pub fn read_clipboard() -> String {
         clip.clipboard_text().expect("Failed to read the clipboard")
     }
 }
+
+pub fn to_hex(num: u8) -> String {
+    let mut str = String::with_capacity(2);
+    str.push(__to_hex(num & 0xf));
+    str.push(__to_hex(num >> 4 & 0xf));
+
+    str
+}
+
+pub fn __to_hex(num: u8) -> char {
+    (48 + num) as char
+}
+
+pub fn from_hex(str: &String, offset: usize) -> u8 {
+    let c1 = str.as_bytes()[offset] as char;
+    let c2 = str.as_bytes()[offset + 1] as char;
+
+    __from_hex(c1) | (__from_hex(c2) << 4)
+}
+
+pub fn __from_hex(char: char) -> u8 {
+    char as u8 - 48
+}

@@ -1,8 +1,11 @@
 #![allow(dead_code)]
 
-use std::fmt::Display;
+use std::{
+    fmt::Display,
+    time::{SystemTime, UNIX_EPOCH},
+};
 
-use crate::{singleton::Singleton, HEIGHT, WIDTH};
+use crate::{audio::Audio, singleton::Singleton, HEIGHT, WIDTH};
 
 static mut __MEM: Singleton<Vec<u8>> = Singleton::new(|| <Vec<u8>>::new());
 
@@ -66,7 +69,7 @@ impl MemorySection {
         Some(num)
     }
 
-    pub fn set_add_addr_u32(&self, address: u32, byte: u32) {
+    pub fn set_at_addr_u32(&self, address: u32, byte: u32) {
         self.set_at_addr(address, (byte & 0xff) as u8);
         self.set_at_addr(address + 1, ((byte >> 8) & 0xff) as u8);
         self.set_at_addr(address + 2, ((byte >> 16) & 0xff) as u8);
@@ -134,6 +137,18 @@ Layout:
 #[allow(non_upper_case_globals)]
 pub static mut keymemory: Singleton<MemorySection> =
     Singleton::new(|| MemorySection::new(59, "Key Memory"));
+
+// a 4-byte char
+#[allow(non_upper_case_globals)]
+pub static mut charpress: Singleton<MemorySection> =
+    Singleton::new(|| MemorySection::new(4, "Charpress Memory"));
+
+// see: crate::audio::AudioItem
+// 98-101 4 bytes: starttime in ms: u32
+// 102: bool on wether or not a sound is playing
+#[allow(non_upper_case_globals)]
+pub static mut sfx: Singleton<MemorySection> =
+    Singleton::new(|| MemorySection::new(103, "SFX Memory"));
 
 pub fn peek(address: usize) -> u8 {
     let mem = getmem();

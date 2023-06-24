@@ -1,6 +1,10 @@
 use sdl2::{keyboard::Keycode, mouse::MouseButton};
 
-use crate::{get_s_val, memory::keymemory, utils::is_altgr_pressed};
+use crate::{
+    get_s_val,
+    memory::{charpress, keymemory},
+    set_s_val,
+};
 
 pub fn is_key_down(key: Keycode) -> bool {
     if key as u32 == 0 {
@@ -16,10 +20,7 @@ pub fn is_key_down(key: Keycode) -> bool {
     return false;
 }
 
-pub fn handle_keydown(key: Keycode, repeat: bool) {
-    if repeat {
-        return;
-    }
+pub fn handle_keydown(key: Keycode) {
     let mem = get_s_val!(keymemory);
     for i in 0u32..10 {
         if mem.get_at_addr_u32_d(i * 4 + 1) == 0 {
@@ -83,6 +84,10 @@ pub fn handle_keyup(key: Keycode) {
             mem.set_at_addr(i * 4 + 4, 0);
         }
     }
+}
+
+pub fn handle_textinput(char: char) {
+    get_s_val!(charpress).set_at_addr_u32(0, char as u32);
 }
 
 unsafe fn increment_down_counter(key: u32, reset: bool) {
@@ -177,18 +182,18 @@ pub fn handle_mouseup(button: MouseButton) {
 }
 
 pub fn reset_scroll() {
-    get_s_val!(keymemory).set_add_addr_u32(0x2f, i32::MAX as u32);
+    get_s_val!(keymemory).set_at_addr_u32(0x2f, i32::MAX as u32);
 }
 
 pub fn handle_scroll(x: i32) {
     let newx = x as i64 + get_s_val!(keymemory).get_at_addr_u32_d(0x2f) as i64;
-    get_s_val!(keymemory).set_add_addr_u32(0x2f, newx as u32);
+    get_s_val!(keymemory).set_at_addr_u32(0x2f, newx as u32);
 }
 
 pub fn handle_mousemove(x: u32, y: u32) {
     let mem = get_s_val!(keymemory);
-    mem.set_add_addr_u32(0x33, x);
-    mem.set_add_addr_u32(0x37, y);
+    mem.set_at_addr_u32(0x33, x);
+    mem.set_at_addr_u32(0x37, y);
 }
 
 pub fn mouse_button_down(button: MouseButton) -> bool {

@@ -310,7 +310,10 @@ pub fn handle_key(key: Keycode) {
             }
             return;
         }
-        if let Some(char) = keycode_to_character(key) {
+        if let Some(char) = keycode_to_character(Some(key)) {
+            if char.len_utf8() > 1 {
+                return;
+            }
             remove_selection();
             if char == '\n' {
                 let len = code[LINE].len();
