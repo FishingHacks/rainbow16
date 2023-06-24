@@ -110,7 +110,6 @@ pub fn handle_mousedown(button: MouseButton, x: u32, y: u32) {
             Editor::Code => handle_mousedown_code(button, x, y),
             Editor::Sprites => mousedown_spr(button, x, y),
             Editor::Sfx => mousedown_sfx(button, x, y),
-            _ => {}
         }
     }
 }
@@ -131,7 +130,6 @@ pub fn handle_key(key: Keycode) {
         Editor::Code => handle_key_code(key),
         Editor::Sprites => keydown_spr(key),
         Editor::Sfx => keydown_sfx(key),
-        _ => {}
     }
 }
 
@@ -140,7 +138,6 @@ pub fn render() {
         Editor::Code => render_code(),
         Editor::Sprites => render_spr(),
         Editor::Sfx => render_sfx(),
-        _ => {}
     }
     render_titlebar();
 }

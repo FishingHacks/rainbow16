@@ -2,10 +2,9 @@
 
 use std::{
     fmt::Display,
-    time::{SystemTime, UNIX_EPOCH},
 };
 
-use crate::{audio::Audio, singleton::Singleton, HEIGHT, WIDTH};
+use crate::{singleton::Singleton, HEIGHT, WIDTH};
 
 static mut __MEM: Singleton<Vec<u8>> = Singleton::new(|| <Vec<u8>>::new());
 

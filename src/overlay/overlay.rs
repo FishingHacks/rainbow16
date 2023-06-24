@@ -41,7 +41,6 @@ pub fn set_overlay(new: OverlayType) {
         OverlayType::Options => initopt(),
         OverlayType::None => initterm(),
         OverlayType::CodeEditor => init_editor(),
-        _ => {}
     }
     unsafe { OVERLAY.set(new) };
 }
@@ -56,7 +55,6 @@ pub fn renderoverlay() {
             OverlayType::Options => renderopt(),
             OverlayType::None => renderterm(),
             OverlayType::CodeEditor => render_editor(),
-            _ => {}
         }
     }
     rendermessage();
@@ -72,7 +70,6 @@ pub fn updateoverlay() {
         OverlayType::Options => updateopt(),
         OverlayType::None => updateterm(),
         OverlayType::CodeEditor => update_editor(),
-        _ => {}
     }
 }
 

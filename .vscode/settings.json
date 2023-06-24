@@ -1,0 +1,10 @@
+{
+    "files.associations": {
+        "*.ejs": "html",
+        "*.rsproj": "plaintext",
+        "*.undefied": "ruby",
+        "core.h": "c",
+        "tools.h": "c",
+        "console.h": "c"
+    }
+}

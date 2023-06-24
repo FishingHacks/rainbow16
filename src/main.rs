@@ -46,7 +46,7 @@ use sdl2::{pixels::Color, render::WindowCanvas};
 use singleton::Singleton;
 
 use crate::{
-    audio::tick_audio, keyboard::handle_textinput, memory::charpress, overlay::message::set_message,
+    audio::tick_audio, keyboard::handle_textinput, memory::charpress
 };
 
 #[macro_export]
@@ -219,7 +219,7 @@ fn main() {
                     }
                 }
                 Event::MouseButtonUp {
-                    mouse_btn, x, y, ..
+                    mouse_btn, ..
                 } => {
                     handle_mouseup(mouse_btn);
                 }

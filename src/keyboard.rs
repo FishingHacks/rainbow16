@@ -3,7 +3,6 @@ use sdl2::{keyboard::Keycode, mouse::MouseButton};
 use crate::{
     get_s_val,
     memory::{charpress, keymemory},
-    set_s_val,
 };
 
 pub fn is_key_down(key: Keycode) -> bool {

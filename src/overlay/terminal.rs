@@ -3,12 +3,12 @@ use std::fs::{create_dir_all, read_dir, read_to_string, remove_dir_all, remove_f
 
 use crate::{
     c_singleton,
-    gamestate::{gamedata_to_string, get_code, get_path, load_game, run_game, set_file_name, load_code},
+    gamestate::{gamedata_to_string, get_path, load_game, run_game, set_file_name, load_code},
     get_s_val,
     info::VERSION,
     luautils::print_err,
     utils::{is_alt_pressed, is_ctrl_pressed},
-    Singleton, CARTSPATH, audio::Audio,
+    Singleton, CARTSPATH,
 };
 
 use super::{canvas_functions::*, key_utils::keycode_to_character, overlay::set_overlay};
