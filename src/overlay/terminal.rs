@@ -148,8 +148,13 @@ pub fn run_command(mut cmd: &str) {
             } else {
                 let name = args[0].trim();
                 if name.len() > 0 {
+                    let name = name.to_owned();
                     if let Some(p) = get_s_val!(CARTSPATH)
-                        .join(name.to_owned() + ".r16")
+                        .join(if name.ends_with(".r16") || name.ends_with(".r16.png") {
+                            name
+                        } else {
+                            name + ".r16"
+                        })
                         .to_str()
                     {
                         match write(p, NEW_STR) {
@@ -192,8 +197,13 @@ pub fn run_command(mut cmd: &str) {
             if name.len() < 1 {
                 return;
             }
+            let name = name.to_owned();
             if let Some(p) = get_s_val!(CARTSPATH)
-                .join(name.to_owned() + ".r16")
+                .join(if name.ends_with(".r16") || name.ends_with(".r16.png") {
+                    name.clone()
+                } else {
+                    name.clone() + ".r16"
+                })
                 .to_str()
             {
                 let p = p.to_string();
@@ -207,6 +217,7 @@ pub fn run_command(mut cmd: &str) {
                 };
             }
         }
+        "explore" => set_overlay(super::OverlayType::Explore),
         "run" => {
             if let Some(err) = run_game() {
                 add_line_to_stdout(print_err(err));
@@ -227,8 +238,8 @@ pub fn run_command(mut cmd: &str) {
             } else if img.is_none() {
                 add_line_to_stdout("no preview image!");
             } else {
-                if !filename.ends_with(".png") {
-                    filename.push_str(".png");
+                if !filename.ends_with(".r16.png") {
+                    filename.push_str(".r16.png");
                 }
                 let path = get_s_val!(CARTSPATH).join(filename);
                 match File::create(path) {
@@ -246,8 +257,16 @@ pub fn run_command(mut cmd: &str) {
                         }
 
                         let lines = get_code();
-                        let line1 = if lines.len() > 0 && lines[0].len() > 2 { &lines[0][2..] } else { "" };
-                        let line2 = if lines.len() > 1 && lines[1].len() > 2 { &lines[1][2..] } else { "" };
+                        let line1 = if lines.len() > 0 && lines[0].len() > 2 {
+                            &lines[0][2..]
+                        } else {
+                            ""
+                        };
+                        let line2 = if lines.len() > 1 && lines[1].len() > 2 {
+                            &lines[1][2..]
+                        } else {
+                            ""
+                        };
 
                         c_print(
                             |x: u32, y: u32, c: u8| {
@@ -284,9 +303,18 @@ pub fn run_command(mut cmd: &str) {
                             }
                         }
 
+                        let mut str = gamedata_to_string();
+                        let bytes = unsafe { str.as_mut_vec() };
+                        let len = bytes.len() as u32;
+
+                        bytes.push((len & 0xff) as u8);
+                        bytes.push(((len >> 8) & 0xff) as u8);
+                        bytes.push(((len >> 16) & 0xff) as u8);
+                        bytes.push(((len >> 24) & 0xff) as u8);
+
                         match write_png(&mut f, &vec, 250, 300) {
                             Ok(..) => {
-                                if let Err(e) = f.write(gamedata_to_string().as_bytes()) {
+                                if let Err(e) = f.write(&bytes) {
                                     add_line_to_stdout(&format!("{}", e).to_lowercase());
                                 } else {
                                     add_line_to_stdout("written successfully!");
@@ -314,9 +342,15 @@ pub fn save(args: Vec<&str>) {
             add_line_to_stdout("file is untitled. use save <path>")
         }
     } else {
-        let path = get_s_val!(CARTSPATH).join(args.join(" ") + ".r16");
+        let mut path = get_s_val!(CARTSPATH).clone();
+        for p in get_s_val!(CWD) {
+            path.push(p);
+        }
+        path.push(args.join(" ") + ".r16");
         set_file_name(path.to_str().and_then(|f| Some(f.to_string())));
-        if let Err(e) = write(path, gamedata_to_string()) {
+        if let Err(e) =
+            File::create(path).and_then(|mut f| f.write(gamedata_to_string().as_bytes()))
+        {
             add_line_to_stdout(format!("error: {e}").to_lowercase());
         } else {
             set_overlay(super::OverlayType::CodeEditor);

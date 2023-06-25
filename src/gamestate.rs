@@ -1,7 +1,7 @@
 use crate::{
     audio::Audio,
     c_singleton,
-    file_parser::{game_data_to_string, string_to_game_data},
+    file_parser::{game_data_to_string, string_to_game_data, load_r16_png},
     get_s_val,
     image::Image,
     luastd::setup_stdlib,
@@ -22,8 +22,14 @@ pub struct GameState {
 }
 
 impl GameState {
-    fn load(code: String, filename: Option<String>) -> Option<Self> {
-        string_to_game_data(code, filename)
+    fn load(code: Vec<u8>, filename: Option<String>) -> Option<Self> {
+        if let Some(filename) = filename.clone() {
+            if filename.ends_with(".png") {
+                return load_r16_png(code, Some(filename));
+            }
+        }
+        
+        string_to_game_data(unsafe{String::from_utf8_unchecked(code)}, filename)
     }
 
     fn new(code: String) -> Self {
@@ -125,7 +131,7 @@ pub fn load_code(code: String, filename: Option<String>) {
 }
 
 pub fn load_game(code: Vec<u8>, filename: Option<String>) -> bool {
-    let val = GameState::load(unsafe { String::from_utf8_unchecked(code) }, filename);
+    let val = GameState::load(code, filename);
     if let Some(val) = val {
         set_s_val!(GAME_STATE, val);
         true

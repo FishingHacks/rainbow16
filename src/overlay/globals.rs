@@ -11,6 +11,7 @@ pub enum OverlayType {
     PauseMenu,
     Options,
     CodeEditor,
+    Explore,
     None,
 }
 

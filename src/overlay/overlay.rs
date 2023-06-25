@@ -14,6 +14,7 @@ use super::editor_manager::{
     handle_mousemove as handle_mousemove_editor, handle_scroll as handle_scroll_editor,
     init as init_editor, render as render_editor, update as update_editor,
 };
+use super::explore::{init as init_explore, render as render_explore, update as update_explore};
 use super::globals::{OverlayType, DISPLAYMEM, OVERLAY};
 use super::message::{render as rendermessage, set_message};
 use super::mouse_cursor::{mousemove as mousemove_cursor, render as render_cursor};
@@ -39,6 +40,7 @@ pub fn set_overlay(new: OverlayType) {
         OverlayType::Options => initopt(),
         OverlayType::None => initterm(),
         OverlayType::CodeEditor => init_editor(),
+        OverlayType::Explore => init_explore(),
     }
     unsafe { OVERLAY.set(new) };
 }
@@ -53,6 +55,7 @@ pub fn renderoverlay() {
             OverlayType::Options => renderopt(),
             OverlayType::None => renderterm(),
             OverlayType::CodeEditor => render_editor(),
+            OverlayType::Explore => render_explore(),
         }
     }
     if is_overlay_active() || get_s_val!(keymemory).get_at_addr_d(0x3b) > 0 {
@@ -71,6 +74,7 @@ pub fn updateoverlay() {
         OverlayType::Options => updateopt(),
         OverlayType::None => updateterm(),
         OverlayType::CodeEditor => update_editor(),
+        OverlayType::Explore => update_explore(),
     }
 }
 

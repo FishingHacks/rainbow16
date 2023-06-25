@@ -46,25 +46,16 @@ impl Debug for MetaHeader {
 
 impl MetaHeader {
     fn string(&self) -> String {
-        println!("{:?} ({} bytes)", self.typ, self.data.len());
         // 0x12: Header Start
         let mut str = "\x12".to_string();
         str.push(self.typ as u8 as char);
         // 4 bytes for the data length
         let dat_len = self.data.len();
-        let bytes = unsafe {str.as_mut_vec()};
+        let bytes = unsafe { str.as_mut_vec() };
         bytes.push((dat_len & 0xff) as u8);
         bytes.push(((dat_len >> 8) & 0xff) as u8);
         bytes.push(((dat_len >> 16) & 0xff) as u8);
         bytes.push(((dat_len >> 24) & 0xff) as u8);
-
-        println!(
-            "{} {} {} {}",
-            (dat_len & 0xff) as u8 as char as u8,
-            ((dat_len >> 8) & 0xff) as u8 as char as u8,
-            ((dat_len >> 16) & 0xff) as u8 as char as u8,
-            ((dat_len >> 24) & 0xff) as u8 as char as u8,
-        );
 
         str.push_str(&self.data);
 
@@ -88,8 +79,6 @@ impl MetaHeader {
         sz |= (bytes[off + 3] as u32) << 8;
         sz |= (bytes[off + 4] as u32) << 16;
         sz |= (bytes[off + 5] as u32) << 24;
-
-        println!("Trying to load {:?} ({} bytes)", new.typ, sz);
 
         if str.len() < off + 6 + sz as usize {
             return None;
@@ -159,8 +148,6 @@ pub fn string_to_game_data(str: String, filename: Option<String>) -> Option<Game
     let sfx_header = headers.iter().find(|f| f.typ == HeaderType::Sfx);
     let prev_img_header = headers.iter().find(|f| f.typ == HeaderType::PreviewImage);
 
-    println!("Headers: {:?}", headers);
-
     let mut gamestate = GameState {
         audios: [Audio::new(); 32],
         code: script_header
@@ -202,4 +189,21 @@ pub fn string_to_game_data(str: String, filename: Option<String>) -> Option<Game
     }
 
     Some(gamestate)
+}
+
+pub fn load_r16_png(data: Vec<u8>, filename: Option<String>) -> Option<GameState> {
+    let mut len: u32 = 0;
+    len |= data[data.len() - 4] as u32;
+    len |= (data[data.len() - 3] as u32) << 8;
+    len |= (data[data.len() - 2] as u32) << 16;
+    len |= (data[data.len() - 1] as u32) << 24;
+
+    let mut new_data: Vec<u8> = Vec::with_capacity(len as usize);
+
+    
+    for i in 0..len as usize {
+        new_data.push(data[data.len() - 4 - len as usize + i]);
+    }
+
+    string_to_game_data(unsafe { String::from_utf8_unchecked(new_data) }, filename)
 }

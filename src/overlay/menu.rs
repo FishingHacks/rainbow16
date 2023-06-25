@@ -61,6 +61,10 @@ pub fn update(items: &Vec<String>) -> Option<u32> {
     }
 }
 
+pub fn get_selected() -> u32 {
+    unsafe { selected }
+}
+
 pub fn render(items: &Vec<String>) {
     let selected_item = unsafe { selected };
     let dsty = selected_item as i32 * 8 - 1;

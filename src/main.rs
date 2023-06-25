@@ -1,17 +1,17 @@
-pub mod custom_canvas_functions;
-pub mod screenshot_saver;
-pub mod game_handle_key;
 pub mod audio;
 pub mod canvas_functions;
 pub mod charmap;
+pub mod custom_canvas_functions;
 pub mod file_parser;
 pub mod frequencies;
+pub mod game_handle_key;
 pub mod gamestate;
 pub mod image;
 pub mod info;
 pub mod keyboard;
 pub mod luastd;
 pub mod luautils;
+pub mod screenshot_saver;
 pub mod sprites;
 pub mod utils;
 pub mod waves;
@@ -49,7 +49,10 @@ use sdl2::{pixels::Color, render::WindowCanvas};
 use singleton::Singleton;
 
 use crate::{
-    audio::tick_audio, keyboard::handle_textinput, memory::{charpress, init_memory_sections}, game_handle_key::game_handle_keydown
+    audio::tick_audio,
+    game_handle_key::game_handle_keydown,
+    keyboard::handle_textinput,
+    memory::{charpress, init_memory_sections},
 };
 
 #[macro_export]
@@ -81,7 +84,8 @@ pub_c_singleton!(CARTSPATH, PathBuf, || get_s_val!(PATH).join("carts"));
 pub_c_singleton!(EXPLORECACHEPATH, PathBuf, || get_s_val!(PATH)
     .join("explore_cache"));
 pub_c_singleton!(LOGSPATH, PathBuf, || get_s_val!(PATH).join("logs"));
-pub_c_singleton!(SCREENSHOTSPATH, PathBuf, || get_s_val!(PATH).join("screenshots"));
+pub_c_singleton!(SCREENSHOTSPATH, PathBuf, || get_s_val!(PATH)
+    .join("screenshots"));
 
 fn create_dir_if_necessary(path: &PathBuf) -> Result<(), IoErr> {
     if !path.exists() {
@@ -189,6 +193,7 @@ fn main() {
         handle_textinput('\0');
         let mut keyup_events: Vec<Keycode> = vec![];
         let mut keydown_events: Vec<Keycode> = vec![];
+        
         for event in event_pump.poll_iter() {
             match event {
                 Event::Quit { .. } => {
@@ -229,9 +234,7 @@ fn main() {
                         }
                     }
                 }
-                Event::MouseButtonUp {
-                    mouse_btn, ..
-                } => {
+                Event::MouseButtonUp { mouse_btn, .. } => {
                     handle_mouseup(mouse_btn);
                 }
                 Event::MouseWheel { y, .. } => {
