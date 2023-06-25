@@ -4,12 +4,12 @@ use super::editor::{
 };
 use super::overlay::hide_overlay;
 use super::spr::{render as render_spr, keydown as keydown_spr, mousedown as mousedown_spr, mousemove as handle_mousemove_spr};
-use sdl2::{keyboard::Keycode, mouse::MouseButton};
 use super::sfx::{render as render_sfx, mousedown as mousedown_sfx, mousemove as mousemove_sfx, keydown as keydown_sfx};
 
 use super::canvas_functions::*;
 
 use crate::sprites::LOGO_BG_RED_FG_PURP;
+use crate::system::{Keycode, MouseButton};
 use crate::{
     get_s_val,
     image::{parse_image, Image},

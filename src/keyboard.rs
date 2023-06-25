@@ -1,8 +1,6 @@
-use sdl2::{keyboard::Keycode, mouse::MouseButton};
-
 use crate::{
     get_s_val,
-    memory::{charpress, keymemory},
+    memory::{charpress, keymemory}, system::{Keycode, MouseButton},
 };
 
 pub fn is_key_down(key: Keycode) -> bool {
@@ -34,38 +32,38 @@ pub fn handle_keydown(key: Keycode) {
 
 pub fn handle_acc_keys_down(key: Keycode) {
     let mem = get_s_val!(keymemory);
-    if key == Keycode::LCtrl || key == Keycode::RCtrl {
+    if key == Keycode::Ctrl {
         mem.set_at_addr(0, mem.get_at_addr_d(0) | 1); // 1. bit set to 1
     }
-    if key == Keycode::LAlt {
+    if key == Keycode::Alt {
         mem.set_at_addr(0, mem.get_at_addr_d(0) | 2); // 2. bit set to 1
     }
-    if key == Keycode::LShift || key == Keycode::RShift {
+    if key == Keycode::Shift {
         mem.set_at_addr(0, mem.get_at_addr_d(0) | 4); // 3. bit set to 1
     }
     if key == Keycode::CapsLock {
         mem.set_at_addr(0, mem.get_at_addr_d(0) | 8); // 4. bit set to 1
     }
-    if key == Keycode::RAlt {
+    if key == Keycode::AltGr {
         mem.set_at_addr(0, mem.get_at_addr_d(0) | 16); // 5. bit set to 1
     }
 }
 
 pub fn handle_acc_keys_up(key: Keycode) {
     let mem = get_s_val!(keymemory);
-    if key == Keycode::LCtrl || key == Keycode::RCtrl {
+    if key == Keycode::Ctrl {
         mem.set_at_addr(0, mem.get_at_addr_d(0) & 254); // bitmask to exclude the 1. bit
     }
-    if key == Keycode::LAlt {
+    if key == Keycode::Alt {
         mem.set_at_addr(0, mem.get_at_addr_d(0) & 253); // bitmask to exclude the 2. bit
     }
-    if key == Keycode::LShift || key == Keycode::RShift {
+    if key == Keycode::Shift {
         mem.set_at_addr(0, mem.get_at_addr_d(0) & 251); // bitmask to exclude the 3. bit
     }
     if key == Keycode::CapsLock {
         mem.set_at_addr(0, mem.get_at_addr_d(0) & 247); // bitmask to exclude the 4. bit
     }
-    if key == Keycode::RAlt {
+    if key == Keycode::AltGr {
         mem.set_at_addr(0, mem.get_at_addr_d(0) & 239); // bitmask to exclude the 5. bit
     }
 }
@@ -163,7 +161,6 @@ pub fn handle_mousedown(button: MouseButton) {
         MouseButton::Left => val |= 1,
         MouseButton::Right => val |= 2,
         MouseButton::Middle => val |= 4,
-        _ => {}
     }
     mem.set_at_addr(0x2e, val);
 }
@@ -175,7 +172,6 @@ pub fn handle_mouseup(button: MouseButton) {
         MouseButton::Left => val &= 254,
         MouseButton::Right => val &= 253,
         MouseButton::Middle => val &= 251,
-        _ => {}
     }
     mem.set_at_addr(0x2e, val);
 }
@@ -209,7 +205,6 @@ pub fn mouse_button_down(button: MouseButton) -> bool {
         MouseButton::Left => val & 1 > 0,
         MouseButton::Right => val & 2 > 0,
         MouseButton::Middle => val & 4 > 0,
-        _ => false,
     }
 }
 

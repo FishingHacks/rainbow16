@@ -1,5 +1,5 @@
 #![allow(dead_code)]
-use crate::{get_s_val, memory::keymemory, SDL_CONTEXT};
+use crate::{get_s_val, memory::keymemory};
 
 pub fn cycle(mut value: u8, min: u8, max: u8, up: bool) -> u8 {
     if up {
@@ -42,32 +42,6 @@ pub fn is_altgr_pressed() -> bool {
 #[inline(always)]
 pub fn is_mode_pressed() -> bool {
     is_altgr_pressed()
-}
-
-pub fn copy_to_clipboard(str: &str) {
-    get_s_val!(SDL_CONTEXT)
-        .as_ref()
-        .expect("Failed to obtain the sdl context")
-        .video()
-        .expect("Failed to obtain the video context")
-        .clipboard()
-        .set_clipboard_text(str)
-        .err();
-}
-
-pub fn read_clipboard() -> String {
-    let clip = get_s_val!(SDL_CONTEXT)
-        .as_ref()
-        .expect("Failed to obtain the sdl context")
-        .video()
-        .expect("Failed to obtain the video context")
-        .clipboard();
-
-    if !clip.has_clipboard_text() {
-        String::new()
-    } else {
-        clip.clipboard_text().expect("Failed to read the clipboard")
-    }
 }
 
 pub fn to_hex(num: u8) -> String {

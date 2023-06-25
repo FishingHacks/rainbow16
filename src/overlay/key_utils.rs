@@ -1,6 +1,4 @@
-use sdl2::keyboard::Keycode;
-
-use crate::{get_s_val, memory::charpress};
+use crate::{get_s_val, memory::charpress, system::Keycode};
 
 pub fn keycode_to_character(keycode: Option<Keycode>) -> Option<char> {
     let u32: u32 = get_s_val!(charpress).get_at_addr_u32_d(0);
@@ -11,7 +9,7 @@ pub fn keycode_to_character(keycode: Option<Keycode>) -> Option<char> {
     }
     if let Some(keycode) = keycode {
         match keycode {
-            Keycode::KpEnter | Keycode::Return | Keycode::Return2 => Some('\n'),
+            Keycode::Return => Some('\n'),
             _ => None,
         }
     } else {

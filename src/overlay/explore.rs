@@ -3,8 +3,6 @@ use std::{
     path::PathBuf,
 };
 
-use sdl2::keyboard::Keycode;
-
 use crate::{
     c_singleton,
     file_parser::load_r16_png,
@@ -12,7 +10,7 @@ use crate::{
     get_s_val,
     image::Image,
     keyboard::{button_is_pressed, is_key_down},
-    set_s_val, Singleton, CARTSPATH,
+    set_s_val, Singleton, CARTSPATH, system::Keycode,
 };
 
 use super::{

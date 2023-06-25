@@ -1,12 +1,10 @@
-use sdl2::{keyboard::Keycode, mouse::MouseButton};
-
 use crate::{
     c_singleton,
     gamestate::get_image_vec,
     get_s_val,
     keyboard::mouse_button_down,
     sprites::{IMG_ARR_LEFT, IMG_ARR_RIGHT, IMG_TAB_ONE_SELECTED, IMG_TAB_TWO_SELECTED},
-    Singleton,
+    Singleton, system::{MouseButton, Keycode},
 };
 
 use super::canvas_functions::*;

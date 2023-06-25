@@ -1,7 +1,5 @@
-use sdl2::keyboard::Keycode;
-
 use crate::{
-    gamestate::game_is_running, overlay::message::set_message, screenshot_saver::screenshot,
+    gamestate::game_is_running, overlay::message::set_message, screenshot_saver::screenshot, system::Keycode,
 };
 
 pub fn game_handle_keydown(code: Keycode) {

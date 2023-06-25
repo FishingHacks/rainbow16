@@ -1,7 +1,5 @@
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use sdl2::{keyboard::Keycode, mouse::MouseButton};
-
 use crate::{
     audio::WaveType,
     gamestate::get_audio,
@@ -14,7 +12,7 @@ use crate::{
         SQUARE_WAVE, SQUARE_WAVE_SELECTED, TILTED_SAWTOOTH_WAVE, TILTED_SAWTOOTH_WAVE_SELECTED,
         TRIANGLE_WAVE, TRIANGLE_WAVE_SELECTED,
     },
-    utils::is_shift_pressed,
+    utils::is_shift_pressed, system::{MouseButton, Keycode},
 };
 
 use super::{canvas_functions::*, spr::pad_start};
@@ -153,7 +151,7 @@ pub fn mousedown(button: MouseButton, x: u32, y: u32) {
                 SELECTED -= 1;
             }
         }
-        if x >= 37 && x <= 42 && y >= 10 && y <= 15 && unsafe { SELECTED < 32 } {
+        if x >= 37 && x <= 42 && y >= 10 && y <= 15 && unsafe { SELECTED < 31 } {
             unsafe {
                 SELECTED += 1;
             }
@@ -244,7 +242,7 @@ pub fn mousemove(x: u32, y: u32) {
 }
 
 pub fn keydown(keycode: Keycode) {
-    if keycode == Keycode::Space || keycode == Keycode::KpSpace {
+    if keycode == Keycode::Space {
         let mem = get_s_val!(sfx);
         if mem.get_at_addr_d(102) > 0 {
             for i in 0..=102 {

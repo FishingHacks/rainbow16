@@ -14,10 +14,10 @@ use crate::{
     get_s_val,
     luautils::print_err,
     set_s_val,
-    utils::{copy_to_clipboard, is_alt_pressed, is_ctrl_pressed, is_shift_pressed, read_clipboard},
-    Singleton,
+    utils::{is_alt_pressed, is_ctrl_pressed, is_shift_pressed},
+    system::{copy_to_clipboard, read_clipboard},
+    Singleton, system::{MouseButton, Keycode},
 };
-use sdl2::{keyboard::Keycode, mouse::MouseButton};
 
 fn set_code(code: &Vec<String>) {
     __set_code(code);

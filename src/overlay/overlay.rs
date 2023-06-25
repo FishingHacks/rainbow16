@@ -1,11 +1,9 @@
-use sdl2::keyboard::Keycode;
-use sdl2::mouse::MouseButton;
-
 use crate::audio::{is_muted, set_muted};
 use crate::canvas_functions::PALETTE1;
 use crate::gamestate::game_is_running;
 use crate::get_s_val;
 use crate::memory::keymemory;
+use crate::system::{Keycode, MouseButton};
 use crate::utils::is_ctrl_pressed;
 
 use super::canvas_functions::{clear, cursor};

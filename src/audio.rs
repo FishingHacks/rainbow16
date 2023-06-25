@@ -1,15 +1,11 @@
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use sdl2::audio::{AudioCallback, AudioDevice, AudioSpecDesired, AudioStatus};
-
 use crate::{
     frequencies::FREQUENCIES,
     get_s_val,
     memory::{sfx, MemorySection},
-    singleton::NewSingleton,
     utils::{from_hex, to_hex},
     waves::wave,
-    SDL_CONTEXT,
 };
 
 static mut __VOL: u8 = 100;
@@ -94,18 +90,6 @@ impl AudioItem {
         self.volume = memory.get_at_addr_d(offset + 2);
     }
 
-    fn from_memory(memory: &MemorySection, offset: u32) -> Self {
-        let mut new = Self {
-            sound: 0,
-            volume: 0,
-            wave_type: WaveType::SquareWave,
-        };
-        new.wave_type = WaveType::from_u8(memory.get_at_addr_d(offset));
-        new.sound = memory.get_at_addr_d(offset + 1);
-        new.volume = memory.get_at_addr_d(offset + 2);
-        new
-    }
-
     const fn new() -> Self {
         AudioItem {
             wave_type: WaveType::SquareWave,
@@ -121,15 +105,6 @@ impl Audio {
         offset += 1;
         for audio_item in self.items.iter() {
             audio_item.write_to_memory(memory, offset);
-            offset += 3;
-        }
-    }
-
-    fn read_from_memory(&mut self, memory: &MemorySection, mut offset: u32) {
-        self.speed = memory.get_at_addr_d(offset);
-        offset += 1;
-        for item in self.items.iter_mut() {
-            item.read_from_memory(memory, offset);
             offset += 3;
         }
     }
@@ -180,72 +155,39 @@ impl Audio {
         let mut off = 1;
         for item in new.items.iter_mut() {
             item.sound = vec[off];
-            item.volume = vec[off+1];
-            item.wave_type = WaveType::from_u8(vec[off+2]);
+            item.volume = vec[off + 1];
+            item.wave_type = WaveType::from_u8(vec[off + 2]);
             off += 3;
         }
-        
+
         new
     }
 }
 
-static DESIRED_SPEC: AudioSpecDesired = AudioSpecDesired {
-    channels: Some(1),
-    freq: Some(44100),
-    samples: None,
-};
+static mut PHASE: f32 = 0.0;
 
-struct AudioHandler {
-    freq: f32,
-    phase: f32,
-}
-
-impl AudioCallback for AudioHandler {
-    type Channel = f32;
-
-    fn callback(&mut self, x: &mut [Self::Channel]) {
-        for x in x.iter_mut() {
-            if let Some(mut item) = get_current_audio_item() {
-                if item.sound >= FREQUENCIES.len() as u8 {
-                    item.sound = FREQUENCIES.len() as u8 - 1;
-                }
-                let inc = FREQUENCIES[item.sound as usize] / self.freq;
-                wave(
-                    item.wave_type,
-                    self.phase,
-                    x,
-                    get_volume() as f32 * 0.0025 * (item.volume as f32 / 5.0),
-                    inc,
-                );
-                self.phase = (self.phase + inc) % 1.0;
-            } else {
-                self.phase = 0.0;
-                *x = 0.0;
+pub fn get_amplitude(out: &mut [f32]) {
+    for x in out.iter_mut() {
+        if let Some(mut item) = get_current_audio_item() {
+            if item.sound >= FREQUENCIES.len() as u8 {
+                item.sound = FREQUENCIES.len() as u8 - 1;
             }
-        }
-    }
-}
-
-static mut DEVICE_SFX: NewSingleton<AudioDevice<AudioHandler>> = NewSingleton::new(|| {
-    if let Some(ctx) = get_s_val!(SDL_CONTEXT) {
-        Some(
-            ctx.audio()
-                .expect("Failed to get the audio subsystem")
-                .open_playback(None, &DESIRED_SPEC, |spec| AudioHandler {
-                    freq: spec.freq as f32,
-                    phase: 0.0,
-                })
-                .expect("Failed to create audio device!"),
-        )
-    } else {
-        None
-    }
-});
-
-pub fn tick_audio() {
-    if let Some(v) = get_s_val!(DEVICE_SFX) {
-        if v.status() == AudioStatus::Paused {
-            v.resume();
+            let inc = FREQUENCIES[item.sound as usize] / 44100.0;
+            wave(
+                item.wave_type,
+                unsafe { PHASE },
+                x,
+                get_volume() as f32 * 0.0025 * (item.volume as f32 / 5.0),
+                inc,
+            );
+            unsafe {
+                PHASE = (PHASE + inc) % 1.0;
+            }
+        } else {
+            unsafe {
+                PHASE = 0.0;
+            }
+            *x = 0.0;
         }
     }
 }

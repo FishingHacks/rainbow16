@@ -6,33 +6,6 @@ pub struct Singleton<T> {
     init: fn() -> T,
 }
 
-pub struct NewSingleton<T> {
-    value: Option<T>,
-    init: fn() -> Option<T>,
-}
-
-impl<T> NewSingleton<T> {
-    pub const fn new(init: fn() -> Option<T>) -> Self {
-        Self { value: None, init }
-    }
-
-    pub fn get(&mut self) -> Option<&mut T> {
-        if self.value.is_none() {
-            let init = self.init;
-            self.value = init();
-        }
-        self.value.as_mut()
-    }
-
-    pub fn set(&mut self, value: Option<T>) {
-        self.value = value;
-    }
-
-    pub fn reset(&mut self) {
-        self.set(None);
-    }
-
-}
 impl<T> Singleton<T> {
     pub const fn new(init: fn() -> T) -> Self {
         Singleton { value: None, init }
