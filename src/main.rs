@@ -1,3 +1,6 @@
+pub mod custom_canvas_functions;
+pub mod screenshot_saver;
+pub mod game_handle_key;
 pub mod audio;
 pub mod canvas_functions;
 pub mod charmap;
@@ -46,7 +49,7 @@ use sdl2::{pixels::Color, render::WindowCanvas};
 use singleton::Singleton;
 
 use crate::{
-    audio::tick_audio, keyboard::handle_textinput, memory::{charpress, init_memory_sections}
+    audio::tick_audio, keyboard::handle_textinput, memory::{charpress, init_memory_sections}, game_handle_key::game_handle_keydown
 };
 
 #[macro_export]
@@ -78,6 +81,7 @@ pub_c_singleton!(CARTSPATH, PathBuf, || get_s_val!(PATH).join("carts"));
 pub_c_singleton!(EXPLORECACHEPATH, PathBuf, || get_s_val!(PATH)
     .join("explore_cache"));
 pub_c_singleton!(LOGSPATH, PathBuf, || get_s_val!(PATH).join("logs"));
+pub_c_singleton!(SCREENSHOTSPATH, PathBuf, || get_s_val!(PATH).join("screenshots"));
 
 fn create_dir_if_necessary(path: &PathBuf) -> Result<(), IoErr> {
     if !path.exists() {
@@ -95,6 +99,7 @@ fn setup_folders() -> Result<(), IoErr> {
     create_dir_if_necessary(get_s_val!(CARTSPATH))?;
     create_dir_if_necessary(get_s_val!(EXPLORECACHEPATH))?;
     create_dir_if_necessary(get_s_val!(LOGSPATH))?;
+    create_dir_if_necessary(get_s_val!(SCREENSHOTSPATH))?;
 
     Ok(())
 }
@@ -257,6 +262,7 @@ fn main() {
         }
 
         for key in keydown_events {
+            game_handle_keydown(key);
             handle_acc_keys_down(key);
             ov_handle_keydown(key);
             handle_keydown(key);

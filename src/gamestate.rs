@@ -3,10 +3,12 @@ use crate::{
     c_singleton,
     file_parser::{game_data_to_string, string_to_game_data},
     get_s_val,
+    image::Image,
     luastd::setup_stdlib,
     luautils::{init_ctx, run_function_if_function},
+    memory::{displaymemory, keymemory, sfx},
     overlay::overlay::set_overlay,
-    set_s_val, Singleton, TIME, memory::{sfx, keymemory},
+    set_s_val, Singleton, TIME,
 };
 use rlua::{Error, Lua, StdLib, Value};
 
@@ -16,6 +18,7 @@ pub struct GameState {
     pub filename: Option<String>,
     pub image_vec: Vec<u8>,
     pub audios: [Audio; 32],
+    pub preview_image: Option<Image>,
 }
 
 impl GameState {
@@ -33,6 +36,7 @@ impl GameState {
             filename: None,
             image_vec: Vec::with_capacity(16384),
             lua: None,
+            preview_image: None,
         };
         for _ in 0..16384usize {
             new.image_vec.push(0);
@@ -120,8 +124,8 @@ pub fn load_code(code: String, filename: Option<String>) {
     set_file_name(filename);
 }
 
-pub fn load_game(code: String, filename: Option<String>) -> bool {
-    let val = GameState::load(code, filename);
+pub fn load_game(code: Vec<u8>, filename: Option<String>) -> bool {
+    let val = GameState::load(unsafe { String::from_utf8_unchecked(code) }, filename);
     if let Some(val) = val {
         set_s_val!(GAME_STATE, val);
         true
@@ -170,4 +174,18 @@ pub fn gamedata_to_string() -> String {
 }
 pub fn set_file_name(new: Option<String>) {
     get_s_val!(GAME_STATE).filename = new;
+}
+
+pub fn save_screenshot() {
+    let mut img = Image::new(200, 180);
+    let vec = img.as_bytes();
+    let mem = get_s_val!(displaymemory);
+    for i in 0..200 * 180usize {
+        vec[i] = mem.get_at_addr_d(i as u32 + 0x13);
+    }
+    get_s_val!(GAME_STATE).preview_image = Some(img);
+}
+
+pub fn get_preview_image() -> &'static Option<Image> {
+    &get_s_val!(GAME_STATE).preview_image
 }

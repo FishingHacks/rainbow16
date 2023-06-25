@@ -1,7 +1,7 @@
 #![allow(non_upper_case_globals)]
-use sdl2::mouse::MouseButton;
-
-use crate::keyboard::{button_is_pressed, u8_to_button, Button, is_scrolling_up, is_scrolling_down, mouse_button_down};
+use crate::keyboard::{
+    button_is_pressed, is_scrolling_down, is_scrolling_up, u8_to_button, Button,
+};
 
 use super::canvas_functions::*;
 
@@ -53,7 +53,6 @@ pub fn update(items: &Vec<String>) -> Option<u32> {
             pressed = true;
         }
     }
-
 
     if pressed {
         Some(unsafe { selected })

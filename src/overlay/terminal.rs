@@ -1,12 +1,22 @@
 use sdl2::keyboard::Keycode;
-use std::fs::{create_dir_all, read_dir, read_to_string, remove_dir_all, remove_file, write};
+use std::{
+    fs::{create_dir_all, read, read_dir, remove_dir_all, remove_file, write, File},
+    io::Write,
+};
 
 use crate::{
     c_singleton,
-    gamestate::{gamedata_to_string, get_path, load_game, run_game, set_file_name, load_code},
+    canvas_functions::PALETTE1,
+    custom_canvas_functions::print as c_print,
+    gamestate::{
+        gamedata_to_string, get_code, get_path, get_preview_image, load_code, load_game, run_game,
+        set_file_name,
+    },
     get_s_val,
     info::VERSION,
     luautils::print_err,
+    screenshot_saver::write as write_png,
+    sprites::CARTRIDGE,
     utils::{is_alt_pressed, is_ctrl_pressed},
     Singleton, CARTSPATH,
 };
@@ -187,13 +197,13 @@ pub fn run_command(mut cmd: &str) {
                 .to_str()
             {
                 let p = p.to_string();
-                match read_to_string(p.clone()) {
+                match read(p.clone()) {
                     Err(e) => add_line_to_stdout(format!("{e}")),
                     Ok(str) => {
                         if !load_game(str, Some(p)) {
                             add_line_to_stdout(format!("Failed to load {}", name));
                         }
-                    },
+                    }
                 };
             }
         }
@@ -208,6 +218,85 @@ pub fn run_command(mut cmd: &str) {
         "folder" => {
             #[allow(unused_must_use)]
             open::that_in_background(get_s_val!(CARTSPATH));
+        }
+        "export" => {
+            let mut filename = args.join(" ");
+            let img = get_preview_image();
+            if filename.len() < 1 {
+                add_line_to_stdout("you have to give the image a name!");
+            } else if img.is_none() {
+                add_line_to_stdout("no preview image!");
+            } else {
+                if !filename.ends_with(".png") {
+                    filename.push_str(".png");
+                }
+                let path = get_s_val!(CARTSPATH).join(filename);
+                match File::create(path) {
+                    Err(e) => add_line_to_stdout(&format!("{}", e).to_lowercase()),
+                    Ok(mut f) => {
+                        let mut vec = Vec::with_capacity(250 * 300 * 4);
+                        let tmp = get_s_val!(CARTRIDGE).clone();
+                        let tmp = tmp.as_bytes_unmut();
+                        static mut BYTES: Vec<u8> = Vec::new();
+
+                        for i in tmp {
+                            unsafe {
+                                BYTES.push(i.clone());
+                            }
+                        }
+
+                        let lines = get_code();
+                        let line1 = if lines.len() > 0 && lines[0].len() > 2 { &lines[0][2..] } else { "" };
+                        let line2 = if lines.len() > 1 && lines[1].len() > 2 { &lines[1][2..] } else { "" };
+
+                        c_print(
+                            |x: u32, y: u32, c: u8| {
+                                if x < 250 && y < 300 {
+                                    unsafe {
+                                        BYTES[(y * 250 + x) as usize] = c;
+                                    }
+                                }
+                            },
+                            line1.to_string() + "\n" + line2,
+                            25,
+                            240,
+                            12,
+                        );
+
+                        img.clone().unwrap().put_on_canvas(
+                            |x, y, c| unsafe {
+                                BYTES[(y * 250 + x) as usize] = c;
+                            },
+                            24,
+                            37,
+                        );
+
+                        for y in 0..300 {
+                            for x in 0..250 {
+                                let col = unsafe {
+                                    PALETTE1[BYTES[(299 - y) * 250 + x].clone() as usize]
+                                };
+                                let (r, g, b) = col.get_values();
+                                vec.push(r);
+                                vec.push(g);
+                                vec.push(b);
+                                vec.push(0xff);
+                            }
+                        }
+
+                        match write_png(&mut f, &vec, 250, 300) {
+                            Ok(..) => {
+                                if let Err(e) = f.write(gamedata_to_string().as_bytes()) {
+                                    add_line_to_stdout(&format!("{}", e).to_lowercase());
+                                } else {
+                                    add_line_to_stdout("written successfully!");
+                                }
+                            }
+                            Err(e) => add_line_to_stdout(&format!("{:?}", e).to_lowercase()),
+                        }
+                    }
+                }
+            }
         }
         _ => add_line_to_stdout(format!("unknown command: {}", cmd)),
     }

@@ -1,6 +1,9 @@
+use std::fmt::Debug;
+
 use crate::{
     audio::Audio,
     gamestate::GameState,
+    image::parse_image,
     utils::{__from_hex, __to_hex},
 };
 
@@ -9,7 +12,8 @@ enum HeaderType {
     Script,
     Sfx,
     Images,
-    Unknown,
+    PreviewImage,
+    Unknown = 255,
 }
 
 impl HeaderType {
@@ -18,29 +22,49 @@ impl HeaderType {
             0 => Self::Script,
             1 => Self::Sfx,
             2 => Self::Images,
-            3 => Self::Unknown,
+            3 => Self::PreviewImage,
+            0xff => Self::Unknown,
             _ => Self::Script,
         }
     }
 }
 
-#[derive(Debug)]
 struct MetaHeader {
     typ: HeaderType,
     data: String,
 }
 
+impl Debug for MetaHeader {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_fmt(format_args!(
+            "MetaHeader<{:?}>({} bytes data)",
+            self.typ,
+            self.data.len()
+        ))
+    }
+}
+
 impl MetaHeader {
     fn string(&self) -> String {
+        println!("{:?} ({} bytes)", self.typ, self.data.len());
         // 0x12: Header Start
         let mut str = "\x12".to_string();
         str.push(self.typ as u8 as char);
         // 4 bytes for the data length
         let dat_len = self.data.len();
-        str.push((dat_len & 0xff) as u8 as char);
-        str.push(((dat_len >> 8) & 0xff) as u8 as char);
-        str.push(((dat_len >> 16) & 0xff) as u8 as char);
-        str.push(((dat_len >> 24) & 0xff) as u8 as char);
+        let bytes = unsafe {str.as_mut_vec()};
+        bytes.push((dat_len & 0xff) as u8);
+        bytes.push(((dat_len >> 8) & 0xff) as u8);
+        bytes.push(((dat_len >> 16) & 0xff) as u8);
+        bytes.push(((dat_len >> 24) & 0xff) as u8);
+
+        println!(
+            "{} {} {} {}",
+            (dat_len & 0xff) as u8 as char as u8,
+            ((dat_len >> 8) & 0xff) as u8 as char as u8,
+            ((dat_len >> 16) & 0xff) as u8 as char as u8,
+            ((dat_len >> 24) & 0xff) as u8 as char as u8,
+        );
 
         str.push_str(&self.data);
 
@@ -64,6 +88,8 @@ impl MetaHeader {
         sz |= (bytes[off + 3] as u32) << 8;
         sz |= (bytes[off + 4] as u32) << 16;
         sz |= (bytes[off + 5] as u32) << 24;
+
+        println!("Trying to load {:?} ({} bytes)", new.typ, sz);
 
         if str.len() < off + 6 + sz as usize {
             return None;
@@ -96,6 +122,10 @@ pub fn game_data_to_string(data: &GameState) -> String {
 
     let mut str = "R16\x10".to_string();
 
+    if let Some(img) = &data.preview_image {
+        str.push_str(&MetaHeader::new(HeaderType::PreviewImage, img.stringify_vec()).string());
+    }
+
     str.push_str(&script_header.string());
     str.push_str(&sfx_header.string());
     str.push_str(&spr_header.string());
@@ -127,6 +157,9 @@ pub fn string_to_game_data(str: String, filename: Option<String>) -> Option<Game
         .unwrap_or(String::new());
     let image_header = headers.iter().find(|f| f.typ == HeaderType::Images);
     let sfx_header = headers.iter().find(|f| f.typ == HeaderType::Sfx);
+    let prev_img_header = headers.iter().find(|f| f.typ == HeaderType::PreviewImage);
+
+    println!("Headers: {:?}", headers);
 
     let mut gamestate = GameState {
         audios: [Audio::new(); 32],
@@ -137,6 +170,7 @@ pub fn string_to_game_data(str: String, filename: Option<String>) -> Option<Game
         lua: None,
         filename,
         image_vec: Vec::new(),
+        preview_image: prev_img_header.and_then(|str| parse_image(200, 180, str.data.clone())),
     };
 
     for _ in 0..16384 {

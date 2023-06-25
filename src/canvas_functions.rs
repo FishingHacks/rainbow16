@@ -151,7 +151,7 @@ pub fn set_pixel(x: i32, y: i32, color: u8) {
     }
 
     if let Some(c) = get_color(color) {
-        get_s_val!(displaymemory).set_at_addr((y * WIDTH as i32 + x + 19).abs() as u32, c);
+        get_s_val!(displaymemory).set_at_addr((y * WIDTH as i32 + x + 0x13).abs() as u32, c);
     }
 }
 
