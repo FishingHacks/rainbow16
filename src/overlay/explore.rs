@@ -1,23 +1,24 @@
-use std::{
-    fs::{read, read_dir},
-    path::PathBuf,
-};
+use std::path::PathBuf;
 
 use crate::{
     c_singleton,
     file_parser::load_r16_png,
+    fs::{read, read_dir},
     gamestate::{load_game, run_game},
     get_s_val,
     image::Image,
     keyboard::{button_is_pressed, is_key_down},
-    set_s_val, Singleton, CARTSPATH, system::Keycode,
+    set_s_val,
+    system::Keycode,
+    Singleton, CARTSPATH,
 };
 
 use super::{
     background::{render_bg, update_bg},
     canvas_functions::set_pixel,
     menu::{self, get_selected},
-    overlay::hide_overlay, message::set_message,
+    message::set_message,
+    overlay::hide_overlay,
 };
 
 c_singleton!(PATH, PathBuf, || get_s_val!(CARTSPATH).to_path_buf());
@@ -30,30 +31,16 @@ c_singleton!(ITEMS, Vec<String>, || {
 
     println!("Reading {}", get_s_val!(PATH).display());
     match read_dir(get_s_val!(PATH)) {
-        Ok(entries) => {
+        Some(entries) => {
             for e in entries {
-                match e {
-                    Ok(e) => {
-                        if let Some(name) = e.file_name().to_str().map(|str| str.to_string()) {
-                            match e.file_type() {
-                                Ok(typ) => {
-                                    if typ.is_dir() {
-                                        new.push(name + "/");
-                                    } else if typ.is_file() {
-                                        new.push(name);
-                                    } else {
-                                        println!("unknown type: {:?}", typ);
-                                    }
-                                }
-                                Err(e) => println!("Failed to stat: {:?}", e),
-                            }
-                        }
-                    }
-                    Err(e) => println!("Failed to stat1: {:?}", e),
+                if e.is_dir() {
+                    new.push(e.get_name() + "/");
+                } else if e.is_file() {
+                    new.push(e.get_name());
                 }
             }
         }
-        Err(e) => println!("Failed to read the directory: {:?}", e),
+        None => println!("Failed to read the directory"),
     }
 
     new
@@ -87,17 +74,17 @@ pub fn update() {
                 VALUE.reset();
                 ITEMS.reset();
             }
-            let v = read(path.clone());
-            if let Ok(v) = v {
+            let v = read(&path);
+            if let Some(v) = v {
                 if load_game(v, path.to_str().map(|s| s.to_string())) {
                     if let Some(e) = run_game() {
                         set_message(&format!("{}", e));
                     }
                 } else {
-                    set_message("failed to read file!");
+                    set_message("failed to read the file");
                 }
             } else {
-                set_message(&format!("{}", v.err().unwrap()));
+                set_message("failed to read the file");
             }
         }
     }
@@ -114,7 +101,7 @@ pub fn update() {
         let mut path = get_s_val!(PATH).clone();
         path.push(&get_s_val!(ITEMS)[get_selected() as usize]);
         let mut changed = false;
-        if let Ok(data) = read(path) {
+        if let Some(data) = read(&path) {
             if let Some(data) = load_r16_png(data, None) {
                 if let Some(img) = data.preview_image {
                     set_s_val!(VALUE, (get_selected(), Some(img), true));

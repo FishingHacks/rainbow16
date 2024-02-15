@@ -1,6 +1,6 @@
 #![allow(dead_code, unused_variables, non_upper_case_globals)]
 
-use crate::{charmap::get_char, get_s_val, swap, HEIGHT, WIDTH};
+use crate::{get_s_val, swap, HEIGHT, WIDTH, charmap::{put_char_on_canvas, put_char_on_canvas_custom}};
 
 use super::globals::DISPLAYMEM;
 
@@ -174,17 +174,6 @@ pub fn cursor(x: Option<i32>, y: Option<i32>) {
     }
 }
 
-pub fn put_char_on_canvas(char: &u32, x: i32, y: i32, color: u8) {
-    for oy in 0..5 {
-        for ox in 0..3 {
-            let off = (4 - oy) * 3 + ox;
-            if char >> off & 0x1 == 1 {
-                set_pixel(x + (2 - ox), y + oy, color);
-            }
-        }
-    }
-}
-
 pub fn print(text: &String, x: Option<i32>, y: Option<i32>, color: Option<u8>) {
     let bytes: Vec<char> = text.chars().collect();
 
@@ -199,10 +188,7 @@ pub fn print(text: &String, x: Option<i32>, y: Option<i32>, color: Option<u8>) {
             '\n' => cursor(Some(x.unwrap_or(0)), Some(unsafe { cursory } + 6)),
             ' ' => unsafe { cursorx += 4 },
             _ => unsafe {
-                let char = get_char(bytes[i]);
-                put_char_on_canvas(&char, cursorx, cursory, col);
-
-                cursorx += 4;
+                cursorx += put_char_on_canvas_custom(bytes[i], cursorx, cursory, col, set_pixel) as i32;
             },
         };
         i += 1;

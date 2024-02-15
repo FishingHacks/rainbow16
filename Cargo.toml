@@ -8,9 +8,20 @@ edition = "2021"
 [dependencies]
 chrono = "0.4.26"
 dirs = "5.0.1"
-futures = "0.3.28"
 highlighter = "0.1.1-alpha"
-open = "4.1.0"
 rand = "0.8.5"
-rlua = "0.19.4"
+rlua = { version = "0.19.4", features = ["lua-no-oslib"] }
+
+[target.'cfg(target_family="windows")'.dependencies]
 sdl2 = "0.35.2"
+[target.'cfg(target_family="unix")'.dependencies]
+sdl2 = "0.35.2"
+
+[target.'cfg(target_family="wasm")'.dependencies]
+getrandom = { features = ["js"] }
+wee_alloc = { version = "0.4.5" }
+wasm-bindgen = "0.2.63"
+console_error_panic_hook = "0.1.7"
+
+[dev-dependencies]
+wasm-bindgen-test = "0.3.13"

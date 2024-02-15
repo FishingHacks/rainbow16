@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::{c_singleton, get_s_val, Singleton, set_pixel};
+use crate::{c_singleton, get_s_val, set_pixel, Singleton};
 
 c_singleton!(CHARMAP, HashMap<char, u32>, || {
     let mut map = HashMap::new();
@@ -82,18 +82,63 @@ c_singleton!(CHARMAP, HashMap<char, u32>, || {
     map
 });
 
+c_singleton!(CHARMAP_SPECIAL, HashMap<char, u64>, || {
+    let mut map = HashMap::new();
+
+    map.insert('U', 0b0010001110101010010000100);
+
+    map
+});
+
 static UNKNOWN_CHAR: &u32 = &31599;
 
-pub fn get_char(char: char) -> u32 {
+pub fn get_char_special(char: char) -> u32 {
     *get_s_val!(CHARMAP).get(&char).unwrap_or(UNKNOWN_CHAR)
 }
 
-pub fn put_char_on_canvas(char: &u32, x: i32, y: i32, color: u8) {
+pub fn put_char_on_canvas(char: char, x: i32, y: i32, color: u8) -> u32 {
+    put_char_on_canvas_custom(char, x, y, color, set_pixel)
+}
+
+pub fn put_char_on_canvas_custom<F>(char: char, x: i32, y: i32, color: u8, set_pixel: F) -> u32
+where
+    F: Fn(i32, i32, u8) -> (),
+{
+    if let Some(char) = get_s_val!(CHARMAP).get(&char) {
+        print_char(char, x, y, color, set_pixel);
+        4
+    } else if let Some(char) = get_s_val!(CHARMAP_SPECIAL).get(&char) {
+        print_special_char(char, x, y, color, set_pixel);
+        8
+    } else {
+        print_char(&UNKNOWN_CHAR, x, y, color, set_pixel);
+        4
+    }
+}
+
+fn print_char<F>(char: &u32, x: i32, y: i32, color: u8, set_pixel: F)
+where
+    F: Fn(i32, i32, u8) -> (),
+{
     for oy in 0..5 {
         for ox in 0..3 {
-            let off = (4-oy) * 3 + ox;
+            let off = (4 - oy) * 3 + ox;
             if char >> off & 0x1 == 1 {
-                set_pixel(x+(2-ox), y+oy, color);
+                set_pixel(x + (2 - ox), y + oy, color);
+            }
+        }
+    }
+}
+
+fn print_special_char<F>(char: &u64, x: i32, y: i32, color: u8, set_pixel: F)
+where
+    F: Fn(i32, i32, u8) -> (),
+{
+    for oy in 0..5 {
+        for ox in 0..5 {
+            let off = (4 - oy) * 5 + ox;
+            if char >> off & 0x1 == 1 {
+                set_pixel(x + (2 - ox), y + oy, color);
             }
         }
     }

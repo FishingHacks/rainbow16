@@ -1,2 +1,5 @@
 /target
 /TIC-80
+/emscripten
+node_modules
+/emscripten

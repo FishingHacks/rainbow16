@@ -1,6 +1,8 @@
 #![allow(dead_code)]
 
-use crate::charmap::{get_char, put_char_on_canvas};
+use std::sync::atomic::{AtomicI32, Ordering::Relaxed};
+
+use crate::charmap::put_char_on_canvas;
 use crate::gamestate::get_image_vec;
 use crate::memory::displaymemory;
 use crate::singleton::Singleton;
@@ -272,7 +274,7 @@ pub fn in_bounds(x: i32, y: i32) -> bool {
         || y < 0
         // || y < get_s_val_c!(MIN_Y)
         || y >= HEIGHT as i32)
-        // || y >= get_s_val_c!(MAX_Y))
+    // || y >= get_s_val_c!(MAX_Y))
 }
 
 pub fn line(mut x1: i32, mut y1: i32, mut x2: i32, mut y2: i32, color: u8) {
@@ -363,25 +365,19 @@ pub fn get_color(mut color: u8) -> Option<u8> {
     }
 }
 
-static mut CURSORX: i32 = 0;
-static mut CURSORY: i32 = 0;
+static CURSORX: AtomicI32 = AtomicI32::new(0);
+static CURSORY: AtomicI32 = AtomicI32::new(0);
 
 pub fn cursor(x: Option<i32>, y: Option<i32>) {
     if x.is_none() && y.is_none() {
-        unsafe {
-            CURSORX = 0;
-            CURSORY = 0;
-        }
+        CURSORX.store(0, Relaxed);
+        CURSORY.store(0, Relaxed);
     }
-    if let Some(_x) = x {
-        unsafe {
-            CURSORX = _x;
-        }
+    if let Some(x) = x {
+        CURSORX.store(x, Relaxed);
     }
-    if let Some(_y) = y {
-        unsafe {
-            CURSORY = _y;
-        }
+    if let Some(y) = y {
+        CURSORY.store(y, Relaxed);
     }
 }
 
@@ -401,18 +397,23 @@ pub fn print<T: Into<String>>(text: T, x: Option<i32>, y: Option<i32>, color: Op
     });
 
     while i < bytes.len() {
-        let char = get_char(bytes[i]);
         match bytes[i] {
-            '\n' => cursor(Some(x.unwrap_or(0)), Some(unsafe { CURSORY } + 6)),
+            '\n' => cursor(Some(x.unwrap_or(0)), Some(CURSORY.load(Relaxed) + 6)),
             _ => unsafe {
-                put_char_on_canvas(&char, CURSORX, CURSORY, col);
-
-                CURSORX += 4;
+                CURSORX.fetch_add(
+                    put_char_on_canvas(
+                        bytes[i],
+                        x.unwrap_or(CURSORX.load(Relaxed)),
+                        y.unwrap_or(CURSORY.load(Relaxed)),
+                        col,
+                    ) as i32,
+                    Relaxed,
+                );
             },
         };
         i += 1;
     }
-    cursor(Some(x.unwrap_or(0)), Some(unsafe { CURSORY } + 6));
+    cursor(Some(x.unwrap_or(0)), Some(CURSORY.load(Relaxed) + 6));
 }
 
 pub fn sspr(sx: i32, sy: i32, x: u32, y: u32, w: u32, h: u32) {

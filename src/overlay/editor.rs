@@ -1,4 +1,4 @@
-use std::fs::write;
+use std::path::Path;
 
 use super::{
     canvas_functions::*,
@@ -16,7 +16,7 @@ use crate::{
     set_s_val,
     utils::{is_alt_pressed, is_ctrl_pressed, is_shift_pressed},
     system::{copy_to_clipboard, read_clipboard},
-    Singleton, system::{MouseButton, Keycode},
+    Singleton, system::{MouseButton, Keycode}, fs::write,
 };
 
 fn set_code(code: &Vec<String>) {
@@ -468,8 +468,8 @@ pub fn handle_key(key: Keycode) {
 pub fn save() {
     if let Some(path) = get_path() {
         let code = gamedata_to_string();
-        if let Err(e) = write(path, code) {
-            set_message(format!("error: {e}").to_lowercase().as_str());
+        if let Err(..) = write(&Path::new(&path).to_path_buf(), code.as_bytes()) {
+            set_message("saving failed");
         } else {
             set_message("file saved");
         }

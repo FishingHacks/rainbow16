@@ -1,12 +1,11 @@
+use crate::charmap::put_char_on_canvas_custom;
 use highlighter::core::language::Language;
 use highlighter::core::language::Scope;
 use highlighter::core::Error;
 use highlighter::highlight;
 
-use crate::charmap::get_char;
-
-use super::canvas_functions::put_char_on_canvas;
 use super::canvas_functions::rectfill;
+use super::canvas_functions::set_pixel;
 use super::editor::SelectionCoordinate;
 
 pub struct R16Lang;
@@ -66,7 +65,8 @@ impl Language for R16Lang {
         x.token(
             Scope::KeywordOperator,
             vec![
-                "==", "=", "~=", "\\|", ">>", "<<", "&", "\\+", "-", "\\*", "/", "<=", ">=", "<", ">"
+                "==", "=", "~=", "\\|", ">>", "<<", "&", "\\+", "-", "\\*", "/", "<=", ">=", "<",
+                ">",
             ]
             .join("|"),
         )?;
@@ -79,8 +79,8 @@ impl Language for R16Lang {
             vec_to_regex(vec![
                 "sleep", "add", "stop", "Exit", "peek", "poke", "btn", "btnp", "setp", "cls",
                 "rectfill", "cursor", "print", "rect", "ellipse", "circle", "line", "camera",
-                "pal", "palt", "setpal", "sspr", "spr", "rnd", "time", "cos", "sin", "sqrt",
-                "flr", "sfx"
+                "pal", "palt", "setpal", "sspr", "spr", "rnd", "time", "cos", "sin", "sqrt", "flr",
+                "sfx", "del",
             ]),
         )?;
 
@@ -172,9 +172,7 @@ pub fn print_highlighted_code(
                 // ' '
                 ' ' => x += 4,
                 _ => {
-                    let char = get_char(bytes[i]);
-                    put_char_on_canvas(&char, x, y, t.color as u8);
-                    x += 4;
+                    x += put_char_on_canvas_custom(bytes[i], x, y, t.color as u8, set_pixel) as i32;
                 }
             }
         }

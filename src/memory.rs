@@ -101,7 +101,7 @@ pub static mut displaymemory: Singleton<MemorySection> = Singleton::new(|| {
         section.set_at_addr(i, i as u8);
     }
     section.set_at_addr(16, 0); // palette
-    section.set_at_addr(17, 0); // color translations transparency
+    section.set_at_addr(17, 1); // color translations transparency
     section.set_at_addr(18, 0);
     section
 });

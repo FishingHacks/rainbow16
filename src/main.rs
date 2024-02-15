@@ -4,6 +4,7 @@ pub mod charmap;
 pub mod custom_canvas_functions;
 pub mod file_parser;
 pub mod frequencies;
+pub mod fs;
 pub mod game_handle_key;
 pub mod gamestate;
 pub mod image;
@@ -21,6 +22,17 @@ pub mod waves;
 pub mod memory;
 pub mod overlay;
 pub mod singleton;
+
+// wasm
+
+use fs::{create_dir, remove_file};
+#[cfg(target_family = "wasm")]
+use std::panic;
+#[cfg(target_family = "wasm")]
+use console_error_panic_hook;
+#[cfg(target_family = "wasm")]
+#[global_allocator]
+static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
 use canvas_functions::*;
 use dirs::home_dir;
@@ -41,12 +53,10 @@ use rand::rngs::ThreadRng;
 use rand::thread_rng;
 use singleton::Singleton;
 use std::{
-    fs::{create_dir, remove_file},
-    io::Error as IoErr,
     path::PathBuf,
     time::{SystemTime, UNIX_EPOCH},
 };
-use system::{get_size, show_cursor, Event, Keycode, init};
+use system::{get_size, init, show_cursor, Event, Keycode};
 
 use crate::{
     game_handle_key::game_handle_keydown,
@@ -86,7 +96,7 @@ pub_c_singleton!(LOGSPATH, PathBuf, || get_s_val!(PATH).join("logs"));
 pub_c_singleton!(SCREENSHOTSPATH, PathBuf, || get_s_val!(PATH)
     .join("screenshots"));
 
-fn create_dir_if_necessary(path: &PathBuf) -> Result<(), IoErr> {
+fn create_dir_if_necessary(path: &PathBuf) -> Result<(), ()> {
     if !path.exists() {
         create_dir(path)?;
     } else if !path.is_dir() {
@@ -97,7 +107,7 @@ fn create_dir_if_necessary(path: &PathBuf) -> Result<(), IoErr> {
     Ok(())
 }
 
-fn setup_folders() -> Result<(), IoErr> {
+fn setup_folders() -> Result<(), ()> {
     create_dir_if_necessary(get_s_val!(PATH))?;
     create_dir_if_necessary(get_s_val!(CARTSPATH))?;
     create_dir_if_necessary(get_s_val!(EXPLORECACHEPATH))?;
@@ -120,9 +130,12 @@ fn real_coordinates_to_pixels(realx: u32, realy: u32, window_sz: (u32, u32)) -> 
     }
 }
 
-fn main() {
-    if let Err(e) = setup_folders() {
-        eprintln!("Failed to setup the folders:\n{e}");
+pub fn main() {
+    #[cfg(target_family="wasm")]
+    panic::set_hook(Box::new(console_error_panic_hook::hook));
+
+    if let Err(..) = setup_folders() {
+        eprintln!("Failed to setup the folders!");
         std::process::exit(1);
     }
     init_memory_sections();
@@ -202,7 +215,7 @@ pub fn update(events: Vec<Event>) {
         ov_handle_keyup(key);
         handle_keyup(key);
     }
-    
+
     let now = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .expect("Time went backwards, wut")

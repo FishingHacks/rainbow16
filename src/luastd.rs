@@ -2,7 +2,8 @@ use std::thread;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use rand::Rng;
-use rlua::{Context, Error, FromLua, Table, Value};
+use rlua::Value::Nil;
+use rlua::{Context, Error, FromLua, Table, Value, StdLib};
 
 use crate::gamestate::get_audio;
 use crate::keyboard::{button_is_down, button_is_pressed, u8_to_button};
@@ -18,6 +19,29 @@ pub fn setup_stdlib<'a>(ctx: Context<'a>) -> Result<(), Error> {
     })?;
     add_fn(ctx, "add", |_, (table, value): (Table, Value<'a>)| {
         table.set(table.len()? + 1, value)?;
+
+        Ok(())
+    })?;
+    add_fn(ctx, "del", |_, (table, idx): (Table, i64)| {
+        // let length = table.len()?;
+
+        // let to_pop = length - idx;
+
+        // if to_pop < 0 {
+        //     return Ok(());
+        // }
+
+        // let mut vec: Vec<Value> = Vec::with_capacity(to_pop as usize);
+
+        // for i in 0..to_pop {
+        //     vec.push(table.get(idx + i)?);
+        //     table.set(i, Nil)?;
+        // }
+        // table.set(idx, Nil)?;
+
+        // for i in 0..vec.len() {
+        //     table.set(idx + i as i64, vec[i].clone())?;
+        // }
 
         Ok(())
     })?;

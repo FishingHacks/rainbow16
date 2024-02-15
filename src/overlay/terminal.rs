@@ -1,8 +1,10 @@
-use crate::system::Keycode;
-use std::{
-    fs::{create_dir_all, read, read_dir, remove_dir_all, remove_file, write, File},
-    io::Write,
+use crate::{
+    fs::{create_dir, open_file, read, read_dir, remove_dir, remove_file, write},
+    system::Keycode,
 };
+#[cfg(any(target_family = "unix", target_family = "windows"))]
+use std::process::Command;
+use std::{io::Write, path::Path};
 
 use crate::{
     c_singleton,
@@ -102,30 +104,23 @@ pub fn run_command(mut cmd: &str) {
         }
         "mkdir" => {
             let joined = args.join("");
-            if let Err(e) = create_dir_all(get_s_val!(CARTSPATH).join(joined.as_str())) {
-                add_line_to_stdout(e.to_string());
+            if let Err(..) = create_dir(&get_s_val!(CARTSPATH).join(joined.as_str())) {
+                add_line_to_stdout("could not create directory");
             }
         }
-        "ls" => match read_dir(get_s_val!(CARTSPATH).join(get_s_val!(CWD).join("/"))) {
-            Err(e) => add_line_to_stdout(format!("{e}")),
-            Ok(entries) => {
+        "ls" => match read_dir(&get_s_val!(CARTSPATH).join(get_s_val!(CWD).join("/"))) {
+            None => add_line_to_stdout("Failed to read directory".to_string()),
+            Some(entries) => {
                 if get_s_val!(CWD).len() < 1 {
                     add_line_to_stdout("~: ");
                 } else {
                     add_line_to_stdout("~/".to_string() + &get_s_val!(CWD).join("/") + ":");
                 }
                 for e in entries {
-                    if let Ok(ent) = e {
-                        if match ent.file_type() {
-                            Err(..) => false,
-                            Ok(f) => f.is_dir(),
-                        } {
-                            add_line_to_stdout(
-                                ent.file_name().to_str().unwrap_or("").to_owned() + "/",
-                            );
-                        } else {
-                            add_line_to_stdout(ent.file_name().to_str().unwrap_or(""));
-                        }
+                    if e.is_dir() {
+                        add_line_to_stdout(e.get_name() + "/");
+                    } else if e.is_file() {
+                        add_line_to_stdout(e.get_name());
                     }
                 }
             }
@@ -133,12 +128,12 @@ pub fn run_command(mut cmd: &str) {
         "rm" => {
             let p = get_s_val!(CARTSPATH).join(args.join(" "));
             let res = if p.is_dir() {
-                remove_dir_all(p)
+                remove_dir(&p)
             } else {
-                remove_file(p)
+                remove_file(&p)
             };
-            if let Err(e) = res {
-                add_line_to_stdout(format!("{e}"));
+            if let Err(..) = res {
+                add_line_to_stdout("could not remove the file".to_string());
             }
         }
         "new" => {
@@ -157,14 +152,14 @@ pub fn run_command(mut cmd: &str) {
                         })
                         .to_str()
                     {
-                        match write(p, NEW_STR) {
+                        match write(&Path::new(p).to_path_buf(), NEW_STR.as_bytes()) {
                             Ok(..) => {
                                 // TODO: Load
                                 load_code(NEW_STR.to_string(), Some(p.to_string()));
                                 set_overlay(super::OverlayType::CodeEditor);
                             }
-                            Err(e) => {
-                                add_line_to_stdout(format!("Error: {e}"));
+                            Err(..) => {
+                                add_line_to_stdout("failed to create a new project".to_string());
                             }
                         }
                     }
@@ -207,9 +202,9 @@ pub fn run_command(mut cmd: &str) {
                 .to_str()
             {
                 let p = p.to_string();
-                match read(p.clone()) {
-                    Err(e) => add_line_to_stdout(format!("{e}")),
-                    Ok(str) => {
+                match read(&Path::new(&p).to_path_buf()) {
+                    None => add_line_to_stdout("failed to load file".to_string()),
+                    Some(str) => {
                         if !load_game(str, Some(p)) {
                             add_line_to_stdout(format!("Failed to load {}", name));
                         }
@@ -226,9 +221,18 @@ pub fn run_command(mut cmd: &str) {
         "version" => {
             add_line_to_stdout(VERSION.to_string());
         }
+        #[cfg(any(target_os = "windows", target_os = "linux", target_os = "macos"))]
         "folder" => {
-            #[allow(unused_must_use)]
-            open::that_in_background(get_s_val!(CARTSPATH));
+            let path = get_s_val!(CARTSPATH);
+            #[cfg(target_os = "windows")]
+            let cmd = "explorer".to_string();
+            #[cfg(target_os = "linux")]
+            let cmd = "xdg-open".to_string();
+            #[cfg(target_os = "macos")]
+            let cmd = "open".to_string();
+            if let Err(err) = Command::new(cmd).arg(path).spawn() {
+                println!("failed to open the folder: {}", err);
+            }
         }
         "export" => {
             let mut filename = args.join(" ");
@@ -242,9 +246,9 @@ pub fn run_command(mut cmd: &str) {
                     filename.push_str(".r16.png");
                 }
                 let path = get_s_val!(CARTSPATH).join(filename);
-                match File::create(path) {
-                    Err(e) => add_line_to_stdout(&format!("{}", e).to_lowercase()),
-                    Ok(mut f) => {
+                match open_file(&path) {
+                    None => add_line_to_stdout("failed to open file"),
+                    Some(mut f) => {
                         let mut vec = Vec::with_capacity(250 * 300 * 4);
                         let tmp = get_s_val!(CARTRIDGE).clone();
                         let tmp = tmp.as_bytes_unmut();
@@ -269,8 +273,8 @@ pub fn run_command(mut cmd: &str) {
                         };
 
                         c_print(
-                            |x: u32, y: u32, c: u8| {
-                                if x < 250 && y < 300 {
+                            |x: i32, y: i32, c: u8| {
+                                if x < 250 && y < 300 && x >= 0 && y >= 0 {
                                     unsafe {
                                         BYTES[(y * 250 + x) as usize] = c;
                                     }
@@ -327,19 +331,22 @@ pub fn run_command(mut cmd: &str) {
             }
         }
         _ => add_line_to_stdout(format!("unknown command: {}", cmd)),
-    }
+    };
 }
 
 pub fn save(args: Vec<&str>) {
     if args.len() < 1 {
         if let Some(path) = get_path() {
-            if let Err(e) = write(path, gamedata_to_string()) {
-                add_line_to_stdout(format!("error: {e}").to_lowercase());
+            if let Err(..) = write(
+                &Path::new(&path).to_path_buf(),
+                gamedata_to_string().as_bytes(),
+            ) {
+                add_line_to_stdout("failed to save");
             } else {
                 set_overlay(super::OverlayType::CodeEditor);
             }
         } else {
-            add_line_to_stdout("file is untitled. use save <path>")
+            add_line_to_stdout("use save <path>")
         }
     } else {
         let mut path = get_s_val!(CARTSPATH).clone();
@@ -348,12 +355,12 @@ pub fn save(args: Vec<&str>) {
         }
         path.push(args.join(" ") + ".r16");
         set_file_name(path.to_str().and_then(|f| Some(f.to_string())));
-        if let Err(e) =
-            File::create(path).and_then(|mut f| f.write(gamedata_to_string().as_bytes()))
+        if let Some(..) =
+            open_file(&path).and_then(|mut f| f.write(gamedata_to_string().as_bytes()).ok())
         {
-            add_line_to_stdout(format!("error: {e}").to_lowercase());
-        } else {
             set_overlay(super::OverlayType::CodeEditor);
+        } else {
+            add_line_to_stdout("failed to save");
         }
     }
 }
